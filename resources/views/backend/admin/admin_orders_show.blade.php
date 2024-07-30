@@ -126,16 +126,18 @@
                                 <label for="order_status">Update Status</label>
                                 <select name="order_status" id="order_status" class="form-control">
                                     <option value="">---select action--</option>
-                                    @if ($item->status == 'Pending')
-                                        <option value="Processing">Accept Order</option>
-                                        <option value="Cancelled">Cancel Order</option>
-                                    @elseif($item->status == 'Processing')
-                                        <option value="Shipped">Get Shipping Label</option>
-                                        <option value="Cancelled">Cancel Order</option>
-                                        <option value="Processing">Re-Processing</option>
-                                    @else
-                                        <option value="Processing">Re-Processing</option>
-                                        <option value="Cancelled">Cancel Order</option>
+                                    @if ($item->status !== 'Cancelled' && $item->status !== 'Shipped')
+                                        @if ($item->status == 'Pending')
+                                            <option value="Processing">Accept Order</option>
+                                            <option value="Cancelled">Cancel Order</option>
+                                        @elseif($item->status == 'Processing')
+                                            <option value="Shipped">Get Shipping Label</option>
+                                            <option value="Cancelled">Cancel Order</option>
+                                            <option value="Processing">Re-Processing</option>
+                                        @else
+                                            <option value="Processing">Re-Processing</option>
+                                            <option value="Cancelled">Cancel Order</option>
+                                        @endif
                                     @endif
                                 </select>
                                 <br>
@@ -160,7 +162,8 @@
                         @elseif($item->status != 'Pending')
                             <ul class="list-group">
                                 <li class="list-group-item">
-                                    <a href="{{env('SHIPPING_TRACKING_URL')}}/{{$item->tracking_id}}" target="_blank">Track Package/ View Label</a>
+                                    <a href="{{ env('SHIPPING_TRACKING_URL') }}/{{ $item->tracking_id }}"
+                                        target="_blank">Track Package/ View Label</a>
                                 </li>
                             </ul>
                         @endif

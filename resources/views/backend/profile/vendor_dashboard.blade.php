@@ -1,28 +1,7 @@
-@php
-    use Illuminate\Support\Facades\Auth;
-    $status = Auth::user()->status;
-@endphp
 @extends('backend.layouts.app')
 @section('PageTitle', 'Dashboard')
 
-
 @section('content')
-
-    @if (!$status)
-        <div class="alert alert-danger border-0 bg-danger alert-dismissible fade show py-2">
-            <div class="d-flex align-items-center">
-                <div class="font-35 text-white"><i class="bx bxs-message-square-x"></i>
-                </div>
-                <div class="ms-3">
-                    <h6 class="mb-0 text-white">Your account is still not activated</h6>
-                    <div class="text-white">Wait for admin to activate your account</div>
-                </div>
-            </div>
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    @endif
-
-
     <div class="row row-cols-1 row-cols-md-2 row-cols-xl-4">
         <div class="col">
             <div class="card radius-10 bg-gradient-deepblue">
@@ -48,8 +27,7 @@
             <div class="card radius-10 bg-gradient-orange">
                 <div class="card-body">
                     <div class="d-flex align-items-center">
-                        <h5 class="mb-0 text-white">
-                            {{ \App\MyHelpers::fromEuroView(auth()->user()->currency_id, $total_revenue) }}</h5>
+                        <h5 class="mb-0 text-white">&euro;{{ number_format($total_revenue, 2) }}</h5>
                         <div class="ms-auto">
                             <i class='bx bx-dollar fs-3 text-white'></i>
                         </div>
@@ -69,50 +47,7 @@
             <div class="card radius-10 bg-gradient-orange">
                 <div class="card-body">
                     <div class="d-flex align-items-center">
-                        <h5 class="mb-0 text-white">
-                            {{ \App\MyHelpers::fromEuroView(auth()->user()->currency_id, $total_cost_price) }}</h5>
-                        <div class="ms-auto">
-                            <i class='bx bx-dollar fs-3 text-white'></i>
-                        </div>
-                    </div>
-                    <div class="progress my-3 bg-info-transparent" style="height:3px;">
-                        <div class="progress-bar bg-white" role="progressbar" style="width: 55%" aria-valuenow="25"
-                            aria-valuemin="0" aria-valuemax="100"></div>
-                    </div>
-                    <div class="d-flex align-items-center text-white">
-                        <p class="mb-0">Total Sales Value</p>
-                        {{-- <p class="mb-0 ms-auto">+1.2%<span><i class='bx bx-up-arrow-alt'></i></span></p> --}}
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col">
-            <div class="card radius-10 bg-gradient-orange">
-                <div class="card-body">
-                    <div class="d-flex align-items-center">
-                        <h5 class="mb-0 text-white">
-                            {{ \App\MyHelpers::fromEuroView(auth()->user()->currency_id, $total_profit) }}</h5>
-                        <div class="ms-auto">
-                            <i class='bx bx-dollar fs-3 text-white'></i>
-                        </div>
-                    </div>
-                    <div class="progress my-3 bg-info-transparent" style="height:3px;">
-                        <div class="progress-bar bg-white" role="progressbar" style="width: 55%" aria-valuenow="25"
-                            aria-valuemin="0" aria-valuemax="100"></div>
-                    </div>
-                    <div class="d-flex align-items-center text-white">
-                        <p class="mb-0">Total Sales Profit</p>
-                        {{-- <p class="mb-0 ms-auto">+1.2%<span><i class='bx bx-up-arrow-alt'></i></span></p> --}}
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col">
-            <div class="card radius-10 bg-gradient-orange">
-                <div class="card-body">
-                    <div class="d-flex align-items-center">
-                        <h5 class="mb-0 text-white">
-                            {{ \App\MyHelpers::fromEuroView(auth()->user()->currency_id, $total_cost_price_inventory) }}</h5>
+                        <h5 class="mb-0 text-white">&euro;{{ number_format($total_cost_price, 2) }}</h5>
                         <div class="ms-auto">
                             <i class='bx bx-dollar fs-3 text-white'></i>
                         </div>
@@ -132,8 +67,48 @@
             <div class="card radius-10 bg-gradient-orange">
                 <div class="card-body">
                     <div class="d-flex align-items-center">
-                        <h5 class="mb-0 text-white">
-                            {{ \App\MyHelpers::fromEuroView(auth()->user()->currency_id, $total_profit_inventory) }}</h5>
+                        <h5 class="mb-0 text-white">&euro;{{ number_format($total_profit, 2) }}</h5>
+                        <div class="ms-auto">
+                            <i class='bx bx-dollar fs-3 text-white'></i>
+                        </div>
+                    </div>
+                    <div class="progress my-3 bg-info-transparent" style="height:3px;">
+                        <div class="progress-bar bg-white" role="progressbar" style="width: 55%" aria-valuenow="25"
+                            aria-valuemin="0" aria-valuemax="100"></div>
+                    </div>
+                    <div class="d-flex align-items-center text-white">
+                        <p class="mb-0">Total Profit</p>
+                        {{-- <p class="mb-0 ms-auto">+1.2%<span><i class='bx bx-up-arrow-alt'></i></span></p> --}}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col">
+            <div class="card radius-10 bg-gradient-orange">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <h5 class="mb-0 text-white">&euro;{{ number_format($total_cost_price_inventory, 2) }}</h5>
+                        <div class="ms-auto">
+                            <i class='bx bx-dollar fs-3 text-white'></i>
+                        </div>
+                    </div>
+                    <div class="progress my-3 bg-info-transparent" style="height:3px;">
+                        <div class="progress-bar bg-white" role="progressbar" style="width: 55%" aria-valuenow="25"
+                            aria-valuemin="0" aria-valuemax="100"></div>
+                    </div>
+                    <div class="d-flex align-items-center text-white">
+                        <p class="mb-0">Total Inventory Cost</p>
+                        {{-- <p class="mb-0 ms-auto">+1.2%<span><i class='bx bx-up-arrow-alt'></i></span></p> --}}
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="card radius-10 bg-gradient-orange">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <h5 class="mb-0 text-white">&euro;{{ number_format($total_profit_inventory, 2) }}</h5>
                         <div class="ms-auto">
                             <i class='bx bx-dollar fs-3 text-white'></i>
                         </div>
@@ -149,6 +124,7 @@
                 </div>
             </div>
         </div>
+
         <div class="col">
             <div class="card radius-10 bg-gradient-ohhappiness">
                 <div class="card-body">
@@ -194,30 +170,16 @@
         <div class="col-12 col-lg-6 col-xl-4 d-flex">
             <div class="card radius-10 overflow-hidden w-100">
                 <div class="card-body">
-                    <p>Total Earning</p>
-                    <h4 class="mb-0">{{ \App\MyHelpers::fromEuroView(auth()->user()->currency_id, $total_revenue) }}</h4>
+                    <p>Total Vendors Earning</p>
+                    <h4 class="mb-0">&euro;{{ number_format($total_shop_revenue, 2) }}</h4>
                     {{-- <small>1.4% <i class="zmdi zmdi-long-arrow-up"></i> Since Last Month</small> --}}
                     <hr>
                     <p>Total Payouts Requests</p>
-                    <h4 class="mb-0">{{ \App\MyHelpers::fromEuroView(auth()->user()->currency_id, $cash_out_pending) }}
-                    </h4>
-                    <small><a href="{{ route('vendor-payout-list') }}">All Payout Requests</a></small>
+                    <h4 class="mb-0">&euro;{{ number_format($cash_out_pending, 2) }}</h4>
+                    <small><a href="{{ route('payout-list') }}">All Payout Requests</a></small>
                     <hr>
                     <p>Total Payouts Approved</p>
-                    <h4 class="mb-0">{{ \App\MyHelpers::fromEuroView(auth()->user()->currency_id, $cash_out) }}</h4>
-                    <hr>
-                    <form action="{{ route('vendor-payout-request') }}" method="post">
-                        @csrf
-                        <h5>Request Cashout</h5>
-                        <div class="form-group">
-                            <label for="amount">Amount</label>
-                            <input type="number" name="amount" class="form-control" step="any" min="0.1"
-                                max="{{ $total_revenue - ($cash_out_pending + $cash_out) }}" required>
-                            <small>{{ $total_revenue - ($cash_out_pending + $cash_out) }} Available</small>
-                        </div>
-                        <br>
-                        <button type="submit" class="btn btn-primary">Submit</button>
-                    </form>
+                    <h4 class="mb-0">&euro;{{ number_format($cash_out, 2) }}</h4>
                 </div>
             </div>
         </div>
@@ -227,7 +189,7 @@
                 <div class="card-header border-bottom bg-transparent">
                     <div class="d-flex align-items-center">
                         <div>
-                            <h6 class="mb-0">Customer Review</h6>
+                            <h6 class="mb-0">Latest Customer Reviews</h6>
                         </div>
                         <div class="font-22 ms-auto"><i class="bx bx-dots-horizontal-rounded"></i>
                         </div>
@@ -257,7 +219,8 @@
                                             <p class="mb-0 small-font">{{ '@' . $r->username }} : {{ $r->comment }}
                                             </p>
                                         @endif
-                                        </p>
+
+
                                     </div>
                                 </div>
                                 <div class="col-sm-3">
@@ -296,7 +259,7 @@
         <div class="card-body">
             <div class="d-flex align-items-center">
                 <div>
-                    <h5 class="mb-0">Orders Summary</h5>
+                    <h5 class="mb-0">Latest Orders Summary</h5>
                 </div>
                 <div class="font-22 ms-auto"><i class="bx bx-dots-horizontal-rounded"></i>
                 </div>
@@ -338,7 +301,7 @@
                                     </td>
                                     <td>{{ $order->order->user->name }}</td>
                                     <td>{{ date('h:i d-m-Y', $order->created_at->timestamp) }}</td>
-                                    <td>{{ \App\MyHelpers::fromEuroView(auth()->user()->currency_id, $order->price) }}</td>
+                                    <td>&euro; {{ $order->price }}</td>
                                     <td>
                                         <div class="badge rounded-pill bg-secondary text-info w-100">{{ $order->status }}
                                         </div>

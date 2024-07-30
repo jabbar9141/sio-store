@@ -15,6 +15,7 @@ use App\Http\Controllers\User\VendorController;
 use App\Http\Controllers\WishlistController;
 use App\Models\Announcement;
 use App\Models\Color;
+use App\Models\ShippingCost;
 use App\Models\ShopOrder;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Mail\Message;
@@ -158,6 +159,47 @@ Route::get('/licence', function () {
 Route::get('create/payment', [ShopOrderController::class, 'createPayment'])->name('create.payment');
 Route::get('cancel/payment', [ShopOrderController::class, 'cancel'])->name('cancel.payment');
 Route::get('success/payment', [ShopOrderController::class, 'success'])->name('success.payment');
+
+Route::get('/import-test', function () {
+    ShippingCost::truncate();
+    set_time_limit(10000);
+
+    $filePath = public_path('shipping_costs.csv');
+
+    $file = public_path('shipping_costs.csv');
+
+    // Open the file for reading
+    if (($handle = fopen($file, 'r')) !== false) {
+        // Get the first row, which contains the column headers
+        $header = fgetcsv($handle, 50000, ';');
+        // dump($header);
+        $csvData = [];
+
+        while (($row = fgetcsv($handle, 50000, ';')) !== false) {
+            // dd($row);
+
+            $csvData[] = array_combine($header, $row);
+        }
+
+        fclose($handle);
+    }
+
+    foreach ($csvData as $key => $csvs) {
+        foreach ($csvs as $c_key => $value) {
+            if ($c_key == 'Weight') {
+                continue;
+            }
+            ShippingCost::create([
+                'weight' => $csvs['Weight'],
+                'country_name' => $c_key,
+                'country_iso_2' => substr($c_key, 0, 2),
+                'cost' => $value,
+            ]);
+        }
+    }
+
+    return $csvData;
+});
 
 // devs
 
