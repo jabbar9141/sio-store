@@ -1,0 +1,175 @@
+<?php
+
+use App\Http\Controllers\AddressController;
+use App\Http\Controllers\AnnouncementController;
+use App\Http\Controllers\API\OrderController;
+use App\Http\Controllers\BrandController;
+use App\Http\Controllers\CartController;
+use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\HomeController;
+use App\Http\Controllers\LocationController;
+use App\Http\Controllers\ProductController;
+use App\Http\Controllers\ProductReviewController;
+use App\Http\Controllers\ShopOrderController;
+use App\Http\Controllers\User\VendorController;
+use App\Http\Controllers\WishlistController;
+use App\Models\Announcement;
+use App\Models\Color;
+use App\Models\ShopOrder;
+use Illuminate\Support\Facades\Route;
+use Illuminate\Mail\Message;
+use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Mail;
+
+/*
+|--------------------------------------------------------------------------
+| Web Routes
+|--------------------------------------------------------------------------
+|
+| Here is where you can register web routes for your application. These
+| routes are loaded by the RouteServiceProvider within a group which
+| contains the "web" middleware group. Now create something great!
+|
+*/
+
+Route::get('/email', function () {
+    return view('emails.email-template');
+});
+
+Route::get('/make-model', function () {
+    // Generate the model and migration
+    $exitCode = Artisan::call('make:migration', [
+        'name' => 'add_column_quantity_in_product_variation',
+    ]);
+
+    return "Model and migration created successfully";
+});
+Route::get('/clear-cache', function () {
+    $exitCode = Artisan::call('cache:cache');
+
+    return 'Cache cleared';
+});
+
+Route::get('/', [HomeController::class, 'index']);
+Route::get('/', [HomeController::class, 'index'])->name('home-page');
+Route::get('/dashboard', [HomeController::class, 'dashboard'])->name('dashboard');
+Route::post('get-in-touch', [HomeController::class, 'getInTouch'])->name('get-in-touch');
+Route::post('subscriber', [HomeController::class, 'subscriber'])->name('subscriber');
+
+
+
+//category
+Route::get('store/category', [CategoryController::class, 'showAllCategory'])->name('store.showAllCategory');
+Route::get('store/category/{slug}', [CategoryController::class, 'showCategory'])->name('store.showCategory');
+
+//brands
+Route::get('store/brand', [BrandController::class, 'showAllBrand'])->name('store.showAllBrand');
+Route::get('store/brand/{slug}', [BrandController::class, 'showBrand'])->name('store.showBrand');
+
+//vendors
+Route::get('store/vendor', [App\Http\Controllers\VendorController::class, 'showAllVendor'])->name('store.showAllVendor');
+Route::get('store/vendor/{slug}', [App\Http\Controllers\VendorController::class, 'showVendor'])->name('store.showVendor');
+
+
+//products
+Route::get('store/product/{slug?}', [ProductController::class, 'showProduct'])->name('store.showProduct');
+Route::get('store/search', [ProductController::class, 'searchProducts'])->name('store.searchProducts');
+
+//Product Reviews
+Route::post('store/product/review', [ProductReviewController::class, 'storeReviewWeb'])->name('store.product.review');
+Route::post('store/product/contactWithVendor', [HomeController::class, 'contactWithVendor'])->name('store.product.contactWithVendor');
+
+
+//cart
+Route::post('store/cart/add', [CartController::class, 'addItem'])->name('store.addItem');
+Route::get('store/cart/remove', [CartController::class, 'removeItem'])->name('store.removeItem');
+Route::get('store/my-cart', [CartController::class, 'my_cart'])->name('store.my-cart');
+
+//order
+Route::get('store/init/order', [ShopOrderController::class, 'initialize'])->middleware('auth')->name('store.order.init');
+Route::post('store/submit/order/{order_id}', [ShopOrderController::class, 'submit'])->middleware('auth')->name('store.order.submit');
+Route::post('store/update/order/item/{item_id}', [ShopOrderController::class, 'updateItemStatus'])->middleware('auth')->name('store.order.update.item.status');
+Route::post('store/create/label/item/{item_id}', [ShopOrderController::class, 'createItemShippingLabel'])->middleware('auth')->name('store.create.label.item');
+
+
+Route::get('/payment-success', [ShopOrderController::class, 'payment_success'])->name('payment-success');
+Route::get('/payment-error', [ShopOrderController::class, 'payment_error'])->name('payment-error');
+
+Route::get('/payment-success-sumup', [OrderController::class, 'handleSumUpWebhook'])->name('payment_success_sumup'); //the webhook
+Route::get('payment-complete-sumup/{order_id_ref}', [OrderController::class, 'payment_complete_sumup'])->name('payment_complete_sumup'); //the payment status page
+Route::get('payment-complete-sumup-mobile/{order_id_ref}', [OrderController::class, 'payment_complete_sumup_mobile'])->name('payment_complete_sumup_mobile');
+
+
+//address
+Route::resource('address', AddressController::class)->middleware(['auth']);
+
+Route::resource('wishlist', WishlistController::class)->middleware(['auth']);
+
+Route::resource('announce', AnnouncementController::class)->middleware(['auth', 'auth.role:admin']);
+
+
+Route::get('/set/ship/loc/{loc_id}', [LocationController::class, 'set_ship_loc'])->name('set.ship.loc');
+Route::get('/search-locations', [LocationController::class, 'search_locations'])->name('search-locations');
+Route::get('/estimate-order-ship-cost', [ShopOrderController::class, 'estimate_order_ship_cost'])->name('estimate-order-ship-cost');
+
+//Pages
+Route::get('/about', [HomeController::class, 'about']);
+Route::get('/faq', [HomeController::class, 'faq']);
+Route::get('/help', [HomeController::class, 'help']);
+Route::get('/contact', [HomeController::class, 'contact']);
+
+// KOffApIfeed
+
+
+// Route::fallback(function () {
+//     return redirect()->route('login');
+// });
+
+// devs
+
+Route::get('post-currency/{currency}', [HomeController::class, 'postCurrency']);
+
+Route::get('/term-condition', function () {
+
+    return view('term');
+});
+
+Route::get('/privacy-policy', function () {
+
+    return view('privacy');
+});
+Route::get('/disclaimer', function () {
+
+    return view('disclaimer');
+});
+Route::get('/cookies', function () {
+
+    return view('cookies');
+});
+Route::get('/refund-policy', function () {
+
+    return view('refund');
+});
+Route::get('/licence', function () {
+
+    return view('licence');
+});
+
+Route::get('create/payment', [ShopOrderController::class, 'createPayment'])->name('create.payment');
+Route::get('cancel/payment', [ShopOrderController::class, 'cancel'])->name('cancel.payment');
+Route::get('success/payment', [ShopOrderController::class, 'success'])->name('success.payment');
+
+// devs
+
+require_once __DIR__ . '/auth.php';
+require_once __DIR__ . '/admin.php';
+require_once __DIR__ . '/vendor.php';
+require_once __DIR__ . '/profile.php';
+require_once __DIR__ . '/user.php';
+require_once __DIR__ . '/brand.php';
+require_once __DIR__ . '/category.php';
+require_once __DIR__ . '/sub_category.php';
+require_once __DIR__ . '/product.php';
+require_once __DIR__ . '/coupon.php';
+require_once __DIR__ . '/notifications.php';
+require_once __DIR__ . '/socialite.php';
