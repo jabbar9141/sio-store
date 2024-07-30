@@ -342,7 +342,9 @@ class ShopOrderController extends Controller
                 }
 
                 //one last item to represent the shipping costs
-                $cost = $cost + ($order->shipping_cost[strtolower($request->shipping_provider)] * 100);
+                // $cost = $cost + ($order->shipping_cost[strtolower($request->shipping_provider)] * 100);
+
+                dd($cost);
 
                 $this->createPayment($cost);
             } elseif ($request->payment == "PAYSTACK") {
@@ -358,6 +360,9 @@ class ShopOrderController extends Controller
 
                 //one last item to represent the shipping costs
                 $cost = $cost + ($order->shipping_cost[strtolower($request->shipping_provider)] * 100);
+            } else {
+                DB::rollBack();
+                return back()->with(['error' => "Failed to initiate payment, please try again later"]);
             }
         } catch (Exception $e) {
             DB::rollBack();

@@ -179,7 +179,7 @@ class MyHelpers
     {
         if ($currency_id > 0) {
             $currency = Currency::find($currency_id);
-            $result = number_format((float) $price * (float) $currency->currency_rate,2);
+            $result = number_format($price * $currency->currency_rate, 2);
             return $result . ' ' . $currency->currency_symbol;
         } else {
             return $price . ' ' . "€";

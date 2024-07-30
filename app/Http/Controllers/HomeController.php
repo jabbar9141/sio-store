@@ -27,6 +27,7 @@ use App\Models\ProductVariation;
 use App\Models\User;
 use App\Models\WalkInOrder;
 use App\Models\WalkInOrderItem;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Mail;
 
 class HomeController extends Controller
@@ -120,17 +121,21 @@ class HomeController extends Controller
                     $query->where('vendor_id', Auth::user()->vendor_shop->vendor_id);
                 })->sum('price');
 
+                $total_shop_revenue = $total_revenue;
+
                 $total_revenue += WalkInOrderItem::whereHas('product', function ($query) {
                     $query->where('vendor_id', Auth::user()->vendor_shop->vendor_id);
                 })->sum('total_price');
 
+                $orderIds = ShopOrder::whereNotIn('status', ['Cancelled', 'Refunded', 'Failed'])->pluck('id')->toArray();
                 $items = ShopOrderItem::whereHas('item', function ($query) {
                     $query->where('vendor_id', Auth::user()->vendor_shop->vendor_id);
-                })->get();
+                })->whereIn('order_id', $orderIds)->get();
+                $orderWalkIds = WalkInOrder::whereNot('status', 'Cancelled')->pluck('id')->toArray();
 
                 $walkin_items = WalkInOrderItem::whereHas('product', function ($query) {
                     $query->where('vendor_id', Auth::user()->vendor_shop->vendor_id);
-                })->get();
+                })->where('walk_in_order_id', $orderWalkIds)->get();
 
                 $total_revenue = 0;
                 $total_profit = 0;
@@ -147,22 +152,21 @@ class HomeController extends Controller
 
                 $total_profit = $total_revenue - $total_cost_price;
 
-                $product_ids = ProductModel::where('vendor_id', Auth::user()->vendor_shop->vendor_id)->pluck('product_id')->toArray(); //->sum('product_price');
+                $product_ids = ProductModel::where('admin_approved', true)->where('product_status', true)->where('vendor_id', Auth::user()->vendor_shop->vendor_id)->pluck('product_id')->toArray(); //->sum('product_price');
 
+                $total_revenue_inventory = ProductVariation::whereIn('product_id', $product_ids)
+                    ->select(FacadesDB::raw('SUM(product_quantity * price) as total_revenue'))
+                    ->value('total_revenue');
 
-                $total_revenue_inventory = ProductVariation::whereIn('product_id', $product_ids)->sum('price');
-                $total_cost_price_inventory = ProductVariation::whereIn('product_id', $product_ids)->sum('whole_sale_price');
-
+                // Calculate the sum of quantity * whole_sale_price
+                $total_cost_price_inventory = ProductVariation::whereIn('product_id', $product_ids)
+                    ->select(FacadesDB::raw('SUM(product_quantity * whole_sale_price) as total_cost'))
+                    ->value('total_cost');
                 $total_profit_inventory = $total_revenue_inventory - $total_cost_price_inventory;
-
-
-                // $total_cost_price_inventory = $total_cost_price ?? 0; //ProductModel::where('vendor_id', Auth::user()->vendor_shop->vendor_id)->sum('cost_price');
-
-                // $total_profit_inventory = $total_profit ?? 0; //$total_revenue_inventory - $total_cost_price_inventory;
 
                 $latest_reviews = ProductReview::whereHas('product', function ($query) {
                     $query->where('vendor_id', Auth::user()->vendor_shop->vendor_id);
-                })->orderBy('created_at')->paginate(2);
+                })->whereDate('created_at', Carbon::today())->orderBy('created_at')->paginate(2);
 
                 $cash_out = VendorPayout::where('user_id', Auth::id())->where('status', 'Approved')->sum('response_amount');
                 $cash_out_pending = VendorPayout::where('user_id', Auth::id())->where('status', 'Pending')->sum('requested_amount');
@@ -178,7 +182,8 @@ class HomeController extends Controller
                     'total_cost_price' => $total_cost_price,
                     'total_profit' => $total_profit,
                     'total_cost_price_inventory' => $total_cost_price_inventory,
-                    'total_profit_inventory' => $total_profit_inventory
+                    'total_profit_inventory' => $total_profit_inventory,
+                    'total_shop_revenue' => $total_shop_revenue
                 ]);
             } elseif (Auth::user()->role == 'user') {
                 $orders_total = ShopOrder::where('user_id', Auth::id())->pluck('order_id')->unique()->count();
@@ -208,8 +213,10 @@ class HomeController extends Controller
                 $users_total = ShopOrder::pluck('user_id')->unique()->count();
                 $users_total += WalkInOrder::count();
 
-                $items = ShopOrderItem::get();
-                $walkin_items = WalkInOrderItem::get();
+                $orderIds = ShopOrder::whereNotIn('status', ['Cancelled', 'Refunded', 'Failed'])->pluck('id')->toArray();
+                $items = ShopOrderItem::whereIn('order_id', $orderIds)->get();
+                $orderWalkIds = WalkInOrder::whereNot('status', 'Cancelled')->pluck('id')->toArray();
+                $walkin_items = WalkInOrderItem::where('walk_in_order_id', $orderWalkIds)->get();
 
                 $total_revenue = 0;
                 $total_profit = 0;
@@ -218,7 +225,7 @@ class HomeController extends Controller
                     $total_revenue = $total_revenue + ($item->price * $item->qty);
                     $total_cost_price = ($total_cost_price + ($item?->item?->whole_sale_price ?? 0 * $item->qty));
                 }
-
+                $total_shop_revenue = $total_revenue;
                 foreach ($walkin_items as $item) {
                     $total_revenue = $total_revenue + ($item->total_price);
                     $total_cost_price = ($total_cost_price + ($item?->productVariation?->whole_sale_price ?? 0 * $item->qty));
@@ -226,12 +233,19 @@ class HomeController extends Controller
 
                 $total_profit = $total_revenue - $total_cost_price;
 
-                $total_revenue_inventory = ProductVariation::sum('price');
-                $total_cost_price_inventory = ProductVariation::sum('whole_sale_price');
+                $product_ids = ProductModel::where('admin_approved', true)->where('product_status', true)->pluck('product_id')->toArray();
+                $total_revenue_inventory = ProductVariation::whereIn('product_id', $product_ids)
+                    ->select(FacadesDB::raw('SUM(product_quantity * price) as total_revenue'))
+                    ->value('total_revenue');
+
+                // Calculate the sum of quantity * whole_sale_price
+                $total_cost_price_inventory = ProductVariation::whereIn('product_id', $product_ids)
+                    ->select(FacadesDB::raw('SUM(product_quantity * whole_sale_price) as total_cost'))
+                    ->value('total_cost');
 
                 $total_profit_inventory = $total_revenue_inventory - $total_cost_price_inventory;
 
-                $latest_reviews = ProductReview::orderBy('created_at')->paginate(2);
+                $latest_reviews = ProductReview::whereDate('created_at', Carbon::today())->orderBy('created_at')->paginate(2);
 
                 $cash_out = VendorPayout::where('status', 'Approved')->sum('response_amount');
                 $cash_out_pending = VendorPayout::where('status', 'Pending')->sum('requested_amount');
@@ -247,7 +261,8 @@ class HomeController extends Controller
                     'total_cost_price' => $total_cost_price,
                     'total_profit' => $total_profit,
                     'total_cost_price_inventory' => $total_cost_price_inventory,
-                    'total_profit_inventory' => $total_profit_inventory
+                    'total_profit_inventory' => $total_profit_inventory,
+                    'total_shop_revenue' => $total_shop_revenue
                 ]);
             }
         } else {

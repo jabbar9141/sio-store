@@ -333,6 +333,12 @@ class AdminController extends Controller
         try {
             $product = ProductModel::where('product_id', $product_id)->first();
 
+            foreach ($product->variations as $key => $item) {
+                if (is_null($item->whole_sale_price) || is_null($item->weight)) {
+                    return back()->with('error', 'Enter Product Wholesale Price to Approve');
+                }
+            }
+
             if ($product) {
                 $product->admin_approved = !$product->admin_approved;
                 $product->save();
