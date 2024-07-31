@@ -180,14 +180,14 @@
     <!--    <div class="container-fluid">-->
     <!--        <div class="swiper categories-slider position-relative">-->
     <!--            <div class="swiper swiper-wrapper">-->
-                   
+
     <!--            </div>-->
     <!--            <div class="swiper-button-next"></div>-->
     <!--            <div class="swiper-button-prev"></div>-->
     <!--        </div>-->
     <!--    </div>-->
     <!--</section>-->
-    
+
     <!--end-->
     <section class="product-section mt-5" style="margin-top: 0px !important;">
         <div class="container-fluid">
@@ -267,7 +267,7 @@
                             </div>
                         @endforeach
                     @endif
-               
+
                 {{-- <div class="col-md-3 d-none">
                     <div class="product-cards pb-3">
                         <h2 class="px-3">Appliances for your home | Up to 55% off</h2>
@@ -686,6 +686,7 @@
                                                 <div class="d-flex align-items-center mt-2">
                                                     <h5 class="mb-0">{{ session()->get('session_symbol') ?? '€' }}
                                                         {{ number_format(App\MyHelpers::getPrice($i->product_price)) }}
+                                                        
                                                     </h5>
                                                 </div>
                                             </div>
@@ -840,7 +841,7 @@
 
 
 
-   
+
 
 
     <!-- Products Start -->

@@ -45,11 +45,11 @@ Route::get('/make-model', function () {
 
     return "Model and migration created successfully";
 });
-Route::get('/clear-cache', function () {
-    $exitCode = Artisan::call('cache:cache');
+// Route::get('/clear-cache', function () {
+//     $exitCode = Artisan::call('cache:cache');
 
-    return 'Cache cleared';
-});
+//     return 'Cache cleared';
+// });
 
 Route::get('/', [HomeController::class, 'index']);
 Route::get('/', [HomeController::class, 'index'])->name('home-page');
@@ -161,46 +161,46 @@ Route::get('create/payment', [ShopOrderController::class, 'createPayment'])->nam
 Route::get('cancel/payment/{order_id}', [ShopOrderController::class, 'cancel'])->name('cancel.payment');
 Route::get('success/payment/{order_id}', [ShopOrderController::class, 'success'])->name('success.payment');
 
-Route::get('/import-test', function () {
-    ShippingCost::truncate();
-    set_time_limit(10000);
+// Route::get('/import-test', function () {
+//     ShippingCost::truncate();
+//     set_time_limit(10000);
 
-    $filePath = public_path('shipping_costs.csv');
+//     $filePath = public_path('shipping_costs.csv');
 
-    $file = public_path('shipping_costs.csv');
+//     $file = public_path('shipping_costs.csv');
 
-    // Open the file for reading
-    if (($handle = fopen($file, 'r')) !== false) {
-        // Get the first row, which contains the column headers
-        $header = fgetcsv($handle, 50000, ';');
-        // dump($header);
-        $csvData = [];
+//     // Open the file for reading
+//     if (($handle = fopen($file, 'r')) !== false) {
+//         // Get the first row, which contains the column headers
+//         $header = fgetcsv($handle, 50000, ';');
+//         // dump($header);
+//         $csvData = [];
 
-        while (($row = fgetcsv($handle, 50000, ';')) !== false) {
-            // dd($row);
+//         while (($row = fgetcsv($handle, 50000, ';')) !== false) {
+//             // dd($row);
 
-            $csvData[] = array_combine($header, $row);
-        }
+//             $csvData[] = array_combine($header, $row);
+//         }
 
-        fclose($handle);
-    }
+//         fclose($handle);
+//     }
 
-    foreach ($csvData as $key => $csvs) {
-        foreach ($csvs as $c_key => $value) {
-            if ($c_key == 'Weight') {
-                continue;
-            }
-            ShippingCost::create([
-                'weight' => $csvs['Weight'],
-                'country_name' => $c_key,
-                'country_iso_2' => substr($c_key, 0, 2),
-                'cost' => $value,
-            ]);
-        }
-    }
+//     foreach ($csvData as $key => $csvs) {
+//         foreach ($csvs as $c_key => $value) {
+//             if ($c_key == 'Weight') {
+//                 continue;
+//             }
+//             ShippingCost::create([
+//                 'weight' => $csvs['Weight'],
+//                 'country_name' => $c_key,
+//                 'country_iso_2' => substr($c_key, 0, 2),
+//                 'cost' => $value,
+//             ]);
+//         }
+//     }
 
-    return $csvData;
-});
+//     return $csvData;
+// });
 
 // devs
 

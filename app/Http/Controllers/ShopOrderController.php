@@ -319,8 +319,6 @@ class ShopOrderController extends Controller
             // $cost = $cost + ($order->shipping_cost[strtolower($request->shipping_provider)] * 100);
             $cost = $cost + ($order->shipping_cost);
 
-            dd($cost);
-
             try {
                 $sumup = new \SumUp\SumUp([
                     'app_id'     => env('SUMUP_KEY'),
@@ -332,7 +330,7 @@ class ShopOrderController extends Controller
                 // $value = $accessToken->getValue();
                 $checkoutService = $sumup->getCheckoutService();
                 $checkoutResponse = $checkoutService->create(
-                    $cost * 100,
+                    $cost,
                     'EUR',
                     $order_id . "_" . rand(100000, 999999),
                     env('SUMUP_EMAIL'),
@@ -393,28 +391,22 @@ class ShopOrderController extends Controller
                 }
                 $cost = $cost + $price;
             }
-
-            //one last item to represent the shipping costs
-            // $cost = $cost + ($order->shipping_cost[strtolower($request->shipping_provider)] * 100);
             $cost = ($cost + $order->shipping_cost);
-
-            // dd($cost);
-
             return $this->createPayment($cost, $order->id);
-        } elseif ($request->payment == "PAYSTACK") {
-            $cost = 0;
+        }
+        // elseif ($request->payment == "PAYSTACK") {
+        //     $cost = 0;
 
-            foreach ($order->items as $it) {
-                $price = $it->total_price ?? 0; //
-                if ($price == 0) {
-                    $price = $it->variation->price * $it->qty;
-                }
-                $cost = $cost + ($price * 100);
-            }
-
-            //one last item to represent the shipping costs
-            $cost = $cost + ($order->shipping_cost[strtolower($request->shipping_provider)] * 100);
-        } else {
+        //     foreach ($order->items as $it) {
+        //         $price = $it->total_price ?? 0; //
+        //         if ($price == 0) {
+        //             $price = $it->variation->price * $it->qty;
+        //         }
+        //         $cost = $cost + ($price * 100);
+        //     }
+        //     $cost = ($cost + $order->shipping_cost);
+        // }
+        else {
             DB::rollBack();
             return back()->with(['error' => "Failed to initiate payment, please try again later"]);
         }
@@ -493,6 +485,15 @@ class ShopOrderController extends Controller
 
             $item = ShopOrderItem::where('id', $item_id)->first();
             $item->status = $request->order_status;
+
+            if ($request->order_status === 'Cancelled') {
+
+                $item->variation->update([
+                    'product_quantity' => $item->variation->product_quantity + $item->qty,
+                ]);
+            }
+
+
             $item->save();
 
             $rec1 = User::find(Auth::id());

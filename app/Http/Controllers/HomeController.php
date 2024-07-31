@@ -49,6 +49,9 @@ class HomeController extends Controller
 
         // Ensuring recent products are approved and active
         $recent = ProductModel::where('product_status', 1)
+            ->whereHas('variations', function ($q) {
+                $q->where('product_quantity', '>', 0);
+            })
             ->where('admin_approved', 1)->where('product_quantity', '>', 0)
             ->orderBy('created_at', 'DESC')
             ->limit(20)

@@ -189,11 +189,11 @@
                                     <label class="custom-control-label" for="sumup">SumUp</label>
                                 </div>
 
-                                <div class="custom-control custom-radio mx-4">
+                                {{-- <div class="custom-control custom-radio mx-4">
                                     <input type="radio" class="custom-control-input" name="payment" id="paypal"
                                         value="PAYPAL" required>
                                     <label class="custom-control-label" for="paypal">PAYPAL</label>
-                                </div>
+                                </div> --}}
 
                                 {{-- <div class="custom-control custom-radio ">
                                     <input type="radio" class="custom-control-input" name="payment" id="paystack"
