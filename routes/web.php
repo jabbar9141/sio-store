@@ -88,7 +88,8 @@ Route::get('store/my-cart', [CartController::class, 'my_cart'])->name('store.my-
 
 //order
 Route::get('store/init/order', [ShopOrderController::class, 'initialize'])->middleware('auth')->name('store.order.init');
-Route::post('store/submit/order/{order_id}', [ShopOrderController::class, 'submit'])->middleware('auth')->name('store.order.submit');
+Route::post('store/submit/order', [ShopOrderController::class, 'submit'])->middleware('auth')->name('store.order.submit');
+// Route::post('store/submit/order/{order_id}', [ShopOrderController::class, 'submit'])->middleware('auth')->name('store.order.submit');
 Route::post('store/update/order/item/{item_id}', [ShopOrderController::class, 'updateItemStatus'])->middleware('auth')->name('store.order.update.item.status');
 Route::post('store/create/label/item/{item_id}', [ShopOrderController::class, 'createItemShippingLabel'])->middleware('auth')->name('store.create.label.item');
 
@@ -157,8 +158,8 @@ Route::get('/licence', function () {
 });
 
 Route::get('create/payment', [ShopOrderController::class, 'createPayment'])->name('create.payment');
-Route::get('cancel/payment', [ShopOrderController::class, 'cancel'])->name('cancel.payment');
-Route::get('success/payment', [ShopOrderController::class, 'success'])->name('success.payment');
+Route::get('cancel/payment/{order_id}', [ShopOrderController::class, 'cancel'])->name('cancel.payment');
+Route::get('success/payment/{order_id}', [ShopOrderController::class, 'success'])->name('success.payment');
 
 Route::get('/import-test', function () {
     ShippingCost::truncate();

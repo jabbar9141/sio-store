@@ -137,7 +137,8 @@ class CartController extends Controller
                             'variations' => $variation_string,
                             'variation_id' => $request->variation_id,
                             'qty' => $request->qty,
-                            'price' => $variation->price * $request->qty
+                            'price' => $variation->price * $request->qty,
+                            'weight' => $request->weight ?? 1,
                         ]
                     ]);
                     $cart->save();
@@ -162,6 +163,7 @@ class CartController extends Controller
                             'variation_id' => $request->variation_id,
                             'price' => $variation->price * $request->qty,
                             'qty' => $request->qty,
+                            'weight' => $request->weight ?? 1,
                         ];
                     }
 
@@ -189,6 +191,7 @@ class CartController extends Controller
                     'variation_id' => $request->variation_id,
                     'qty' => $request->qty,
                     'price' => (float) $variation->price * (int) $request->qty,
+                    'weight' => $request->weight ?? 1,
                 ];
             }
 

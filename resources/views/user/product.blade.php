@@ -252,7 +252,7 @@
                             <img class="w-25 h-25" id="ProductImage"
                                 src="/uploads/images/product/{{ $imagees->product_image }}"
                                 alt="{{ $product->product_name }}">
-                            
+
                         @endforeach
                         <video class="class_map_parking_lot_page w-25 h-25"
                                 src="{{ url('uploads/images/product/' . $product->video_link) }}" id="video"
@@ -400,12 +400,12 @@
                         </div>
 
                         <input type="hidden" name="product_id" value="{{ $product->product_id }}">
+                        <input type="hidden" name="weight" value="{{ $product?->variations[0]?->weight ?? 1 }}">
                         @if ($product->variations->count() > 0)
                             <input type="hidden" name="variation_id" value="{{ $product?->variations[0]?->id }}"
                                 id="productVariationId">
                         @else
-                            <input type="hidden" name="variation_id" value="0"
-                                id="productVariationId">
+                            <input type="hidden" name="variation_id" value="0" id="productVariationId">
                         @endif
 
 
@@ -455,7 +455,7 @@
                                 } else {
                                     $price = $product->product_price;
                                 }
-                                $price = App\MyHelpers::fromEuroView(session('currency_id',0), $price);
+                                $price = App\MyHelpers::fromEuroView(session('currency_id', 0), $price);
                             @endphp
                             <span id="productPrice">{{ $price ?? 0 }}</span>
                         </h3>
@@ -597,13 +597,7 @@
                                 @endforeach
 
                             @endif --}}
-
-
-
                         </div>
-
-
-
                         {{-- <p class="text-bold">Dimentions</p> --}}
 
                         {{-- <div class="row mb-4">
@@ -637,8 +631,6 @@
                             </div>
                         </div> --}}
 
-
-
                         <div class="d-flex align-items-center disflexx mb-4 pt-2">
 
                             <div class="input-group quantity mr-3 quantity-btn" style="width: 130px;">
@@ -668,12 +660,8 @@
 
                             </div>
 
-                            <button class="btn btn-primary px-3 cart-submit" type="submit"><i
-                                    class="fa fa-shopping-cart mr-1"></i> Add
-
-                                To
-
-                                Cart</button>
+                            <button class="btn btn-primary px-3 cart-submit" type="submit">
+                                <i class="fa fa-shopping-cart mr-1"></i> Add To Cart</button>
 
                             @auth
 
@@ -686,17 +674,11 @@
                                 @if (!$t)
                                     <button class="btn btn-primary mx-3" type="button"
                                         onclick="likeItem('{{ $product->product_id }}')"><i class="fa fa-heart mr-1"></i> Add
-
-                                        To
-
-                                        Wishlist</button>
+                                        To Wishlist</button>
                                 @else
                                     <button class="btn btn-primary mx-3" type="button"
                                         onclick="likeItem('{{ $product->product_id }}')"><i class="fa fa-heart mr-1"></i>
-
-                                        Remove From
-
-                                        Wishlist</button>
+                                        Remove From Wishlist</button>
                                 @endif
 
                             @endauth
@@ -1256,7 +1238,7 @@
 
         $('#color, #ProductID, #SizeID, #dimentionId').change(function(e) {
             // e.preventDefault();
-            let currency_id = '{{ session("currency_id",0)}}';
+            let currency_id = '{{ session('currency_id', 0) }}';
             let color_name = $('#color').find('option:selected').val();
             let productID = $("#ProductID").val();
             let size_name = $("#sizeID").find('option:selected').val();
@@ -1301,13 +1283,13 @@
                             $('#productImagesDiv').empty();
                             response.product_images.forEach(function(image) {
                                 $('#productImagesDiv').append(`
-                                
+
                                     <img class="hover-effect mb-2"
                                             src="${imageBaseUrl + image}"
                                             alt="{{ $product->product_name }}"
                                             style="cursor: pointer; width: 100px; height: 60px;"
                                             data-full="${imageBaseUrl + image}">
-                                  
+
                                 `);
                             });
 
@@ -1320,7 +1302,7 @@
                         if (response.video_url) {
                             $('#productVideoDiv').empty();
                             response.video_url.forEach(function(video) {
-                                $('#productVideoDiv').append(`<video class="hover-effect img-thumbnail hover-effect mb-2" id="hover-effect" 
+                                $('#productVideoDiv').append(`<video class="hover-effect img-thumbnail hover-effect mb-2" id="hover-effect"
                                 src="${imageBaseUrl + video}"
                                 style="cursor: pointer; width: 100px; height: 100px;"
                                 data-full="${imageBaseUrl + video}" width="100%"

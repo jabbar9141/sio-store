@@ -18,7 +18,7 @@
     </div>
     <!-- Breadcrumb End -->
     <div class="container-fluid">
-        <form action="{{ route('store.order.submit', $order->id) }}" method="post">
+        <form action="{{ route('store.order.submit') }}" method="post">
             @csrf
             <div class="row px-xl-5">
                 <div class="col-lg-8">
@@ -36,7 +36,8 @@
                                                 <div class="col-4">
                                                     <input type="radio" name="billing_address" class=""
                                                         value="{{ $add->id }}" id="add_{{ $add->id }}"
-                                                        onchange="evaluateShipping(this)">
+                                                        onchange="evaluateShipping(this)"
+                                                        data-country-iso-2="{{ $add->country }}">
                                                 </div>
                                                 <div class="col-12">
                                                     <label for="add_{{ $add->id }}">
@@ -73,7 +74,43 @@
                     <div class="bg-light p-30 mb-5">
                         <div class="border-bottom">
                             <h6 class="mb-3">Products</h6>
-                            <input type="hidden" id="current_order_id" value="{{ $order->id }}">
+                            {{-- <input type="hidden" id="current_order_id" value="{{ $order->id }}"> --}}
+
+
+                            @if (null != session('cart') && count(session('cart')) > 0)
+                                @php
+                                    $session_cart = session('cart');
+                                    $cart_total = 0;
+                                @endphp
+                                @foreach ($session_cart as $it)
+                                    @php
+                                        $the_product = App\MyHelpers::getProductById($it['product_id']);
+                                        $variation =
+                                            ProductVariation::find($it['variation_id']) ?? $the_product->variations[0];
+                                        if ($variation) {
+                                            $price = $variation->price;
+                                        } else {
+                                            $price = $the_product->product_pricel;
+                                        }
+
+                                        $cart_total += $price * $it['qty'];
+                                    @endphp
+                                    <div class="d-flex justify-content-between">
+                                        <p style="width: 75%">{{ $the_product->product_name }}
+                                            {{-- ({{ json_encode($it['variations']) }}) --}}
+                                            <b>x
+                                                {{ $it['qty'] }}</b>
+                                        </p>
+                                        <p>
+                                            {{ App\MyHelpers::fromEuroView(session('currency_id', 0), $price * $it['qty']) }}
+                                        </p>
+                                        <p class="d-none"><span
+                                                class="weight product_weight">{{ ($variation->weight ?? 1) * $it['qty'] }}</span>
+                                            Kg</p>
+                                    </div>
+                                @endforeach
+                            @else
+                                {{--
                             @if (isset($order) && null != $order->items)
                                 @php
                                     $total = 0;
@@ -100,32 +137,38 @@
                                         </p>
                                     </div>
                                 @endforeach
-                            @else
+                            @else --}}
                                 <h6 class="mb-3">Products</h6>
                                 <div class="d-flex justify-content-between">
                                     <p>No products</p>
                                 </div>
                             @endif
 
+                            <input type="hidden" id="euro_cart_total" name="euro_cart_total" value="{{ $cart_total }}">
+
                         </div>
                         <div class="border-bottom pt-3 pb-2">
                             <div class="d-flex justify-content-between mb-3">
                                 <h6>Subtotal</h6>
                                 <h6><span
-                                        id="sub_total_cost">{{ App\MyHelpers::fromEuroView(session('currency_id', 0), $total) }}</span>
+                                        id="sub_total_cost">{{ App\MyHelpers::fromEuroView(session('currency_id', 0), $cart_total) }}</span>
                                 </h6>
                             </div>
-                            <div class="">
-                                <h6 class="font-weight-medium">Shipping</h6>
-                                <div class="font-weight-medium" id="shiping_cost_of_cart">{Please select an
-                                    address}</div>
+                            <div class="d-flex justify-content-between mb-3">
+                                <h6>Shipping</h6>
+                                <h6>
+                                    <span class="" id="shiping_cost_of_cart">{Please select an address}</span>
+                                </h6>
+                                <input type="hidden" name="shipping_cost">
                             </div>
                         </div>
                         <div class="pt-2">
                             <div class="d-flex justify-content-between mt-2">
                                 <h5>Total</h5>
-                                <h5><span
-                                        id="total_cost">{{ App\MyHelpers::fromEuroView(session('currency_id', 0), $total) }}</span>
+                                <h5><span id="total_cost">
+                                        {{-- {{ App\MyHelpers::fromEuroView(session('currency_id', 0), $cart_total) }} --}}
+                                    </span>
+                                    <input type="hidden" name="total_amount_to_pay">
                                 </h5>
                             </div>
                         </div>
@@ -142,7 +185,7 @@
                                 </div> --}}
                                 <div class="custom-control custom-radio ">
                                     <input type="radio" class="custom-control-input" name="payment" id="sumup"
-                                        value="SUMUP" required>
+                                        value="SUMUP" required checked>
                                     <label class="custom-control-label" for="sumup">SumUp</label>
                                 </div>
 
@@ -152,11 +195,11 @@
                                     <label class="custom-control-label" for="paypal">PAYPAL</label>
                                 </div>
 
-                                <div class="custom-control custom-radio ">
+                                {{-- <div class="custom-control custom-radio ">
                                     <input type="radio" class="custom-control-input" name="payment" id="paystack"
                                         value="PAYSTACK" required>
                                     <label class="custom-control-label" for="paystack">PayStack</label>
-                                </div>
+                                </div> --}}
                             </div>
                             <button class="btn btn-block btn-primary font-weight-bold py-3" id="place_order_btn"
                                 disabled>Place Order</button>
@@ -524,11 +567,18 @@
 
         function evaluateShipping(obj) {
             if ($(obj).is(':checked')) {
+                let country_iso_2 = $(obj).data('country-iso-2'),
+                    weight = [];
+
+                $.map($('.product_weight'), function(element, index) {
+                    return weight.push($(element).text());
+                });
+
                 let address = $(obj).val();
                 let order_id = $('#current_order_id').val();
                 let shiping_cost_of_cart = $('#shiping_cost_of_cart');
 
-                if (address != '') {
+                if (address != '' && country_iso_2 != '') {
                     // Perform AJAX request to fetch shipping cost for all items based on the user's adress
                     shiping_cost_of_cart.text('Estimating Cost...');
                     let sub_total = $('#sub_total_cost').text();
@@ -537,12 +587,20 @@
                         url: '/estimate-order-ship-cost',
                         method: 'GET',
                         data: {
-                            address_id: address,
-                            order_id: order_id
+                            country_iso_2: country_iso_2,
+                            weights: weight,
+                            euro_cart_total: $('#euro_cart_total').val(),
+                            // address_id: address,
+                            // order_id: order_id
                         },
                         success: function(response) {
-                            console.log(response);
-                            let shipping_costs = response.shipping_costs;
+
+                            $(shiping_cost_of_cart).text('');
+                            $(shiping_cost_of_cart).text(response.shipping_cost);
+                            $('#place_order_btn').attr('disabled', false);
+                            $('#total_cost').text(response.shipping_plus_total);
+                            $('input[name="shipping_cost"]').val(response.euro_shipping_cost)
+                            $('input[name="total_amount_to_pay"]').val(response.euro_shipping_plus_total)
                             // let markup = '';
                             //
                             // if (Object.keys(shipping_costs).length > 0) {
@@ -559,17 +617,16 @@
                         //         `;
                             //         }
                             //     }
-                            if (response.markup) {
-                                // Update the HTML content of shiping_cost_of_cart with the generated markup
-                                shiping_cost_of_cart.html(response.markup);
-                                //enable the submit btn
-                            } else {
-                                shiping_cost_of_cart.text(
-                                    'No Shipping options for your selected address, select another address or try again later.'
-                                );
-                            }
-                            $('#place_order_btn').attr('disabled', false);
-                            $('#total_cost').text(sub_total);
+                            // if (response.markup) {
+                            //     // Update the HTML content of shiping_cost_of_cart with the generated markup
+                            //     shiping_cost_of_cart.html(response.markup);
+                            //     //enable the submit btn
+                            // } else {
+                            //     shiping_cost_of_cart.text(
+                            //         'No Shipping options for your selected address, select another address or try again later.'
+                            //     );
+                            // }
+
                         },
                         error: function(e, f, g) {
                             shiping_cost_of_cart.text(

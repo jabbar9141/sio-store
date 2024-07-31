@@ -52,7 +52,8 @@
                                 <tr>
                                     <td class="align-middle"><img src="img/product-1.jpg" alt=""
                                             style="width: 50px;">
-                                        {{ $the_product->product_name }} ({{ json_encode($it['variations']) }})
+                                        {{ $the_product->product_name }}
+                                        {{-- ({{ json_encode($it['variations']) }}) --}}
                                     </td>
                                     <td class="align-middle">
                                         {{ App\MyHelpers::fromEuroView(session('currency_id', 0), $price) }}</td>
@@ -121,7 +122,8 @@
                             </div>
                             <div class="d-flex justify-content-between">
                                 <h6 class="font-weight-medium">Discount</h6>
-                                <h6 class="font-weight-medium">{{ App\MyHelpers::fromEuroView(session('currency_id', 0), 0) }}</h6>
+                                <h6 class="font-weight-medium">
+                                    {{ App\MyHelpers::fromEuroView(session('currency_id', 0), 0) }}</h6>
                             </div>
                         </div>
                         <div class="pt-2">
