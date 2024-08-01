@@ -184,7 +184,7 @@
                                     <thead>
                                         <th>Name</th>
                                         <th>Image</th>
-                                        <th>Price(&euro;)</th>
+                                        <th>Price</th>
                                         <th>Qty</th>
                                         {{-- <th>variation</th> --}}
                                         <td>*</td>
@@ -247,6 +247,7 @@
                                         $image = $pp->product_thumbnail;
                                     }
                                     $price = $pp->variations[0]->price ?? $pp->product_price;
+                                    $only_price = \App\MyHelpers::fromEuro(auth()->user()->currency_id, $price);
                                     $price = \App\MyHelpers::fromEuroView(auth()->user()->currency_id, $price);
                                 @endphp
 
@@ -255,7 +256,7 @@
                                         <div class="m-2" onclick="selectProduct(this)"
                                             data-name="[{{ $pp->product_code }}] {{ $pp->product_name }}"
                                             data-price="{{ $price }}" data-img="{{ $image }}"
-                                            data-id="{{ $pp->product_id }}">
+                                            data-only-price="{{ $only_price }}" data-id="{{ $pp->product_id }}">
                                             <img src="/uploads/images/product/{{ $image }}" class="card-img-top"
                                                 alt="IMG" style="width: 100%">
                                             <p>[{{ $pp->product_code }}] {{ $pp->product_name }}</p>
@@ -359,6 +360,8 @@
             let list = $('#selected-items-list');
             let product_name = $(obj).data('name');
             let p_price = $(obj).data('price');
+            let only_price = $(obj).data('only_price');
+            console.log("🚀 ~ selectProduct ~ only_price:", only_price)
             let product_img = $(obj).data('img');
             let product_id = $(obj).data('id');
             let mainParent = $(obj).parent();
@@ -367,34 +370,51 @@
             let maxQuantity = variationDiv.find('.productVariation option:selected').data('variationquantity');
             let product_price = variationDiv.find('.productVariation option:selected').data('variationprice');
 
-            $('#product-list').html('');
+            let existing_product = $(list).find('#' + product_id);
 
-            let mar = `
-                <tr>
-                    <td>
-                        ${product_name}
-                    </td>
-                    <td>
-                        <img src = "/uploads/images/product/${product_img}" style="width:50px">
-                    </td>
-                    <td class="price_td">
-                        ${p_price}
-                        <input type="hidden" name = prices[] value = "${product_price}" class="form-control price-field">
-                        <input type="hidden" name = products[] value = "${product_id}" class="form-control product-field">
-                    </td>
-                    <td>
-                        <input type="number" name = qty[] min=1 max=${maxQuantity} step="1" value = "1" onkeyup="calculateTotals()" class="form-control qty-field">
-                    </td>
+            if (existing_product.length > 0) {
+                let quantity = $(existing_product).find('.qty-field').val();
+                $(existing_product).find('.qty-field').val(parseInt(quantity) + 1);
+                let var_price = parseFloat(product_price) + parseFloat(variationDiv.find(
+                    '.productVariation option:selected').data('variationprice'));
 
-                        <input type="hidden" name = variations[] value = ${variation_id} class="form-control variation-field" readonly>
+                let text = $(existing_product).find('.price_td').text().replace(/[^0-9.-]+/g, '');
 
-                    <td>
-                        <button class = "btn btn-sm btn-danger" onclick=removeRow(this)>x</button>
-                    </td>
-                </tr>
-            `;
+                let new_price = parseFloat(text);
+                if (!isNaN(new_price)) {
+                    $(existing_product).find('.price_td').text(new_price + new_price);
+                }
+            } else {
 
-            list.append(mar);
+                $('#product-list').html('');
+
+                let mar = `
+                    <tr id="${product_id}">
+                        <td>
+                            ${product_name}
+                        </td>
+                        <td>
+                            <img src = "/uploads/images/product/${product_img}" style="width:50px">
+                        </td>
+                        <td class="price_td">
+                            ${p_price}
+                            <input type="hidden" name="prices[]" value = "${product_price}" class="form-control price-field">
+                            <input type="hidden" name="products[]" value = "${product_id}" class="form-control product-field">
+                        </td>
+                        <td>
+                            <input type="number" name="qty[]" min=1 max=${maxQuantity} step="1" value = "1" onkeyup="calculateTotals()" class="form-control qty-field">
+                        </td>
+
+                            <input type="hidden" name="variations[]" value = ${variation_id} class="form-control variation-field" readonly>
+
+                        <td>
+                            <button class = "btn btn-sm btn-danger" onclick=removeRow(this)>x</button>
+                        </td>
+                    </tr>
+                `;
+                list.append(mar);
+            }
+
             calculateTotals();
         }
 
@@ -423,19 +443,26 @@
                         // Handle the response from the server
                         // console.log(response);
                         // alert('Form submitted successfully!');
-                        generateReciept('reciept_div', response);
-                        generateReciept2('reciept_div2', response);
-                        generateMainReciept(response);
+                        if (response.success) {
+                            generateReciept('reciept_div', response);
+                            generateReciept2('reciept_div2', response);
+                            generateMainReciept(response);
 
-
-
-                        resetForm();
-                        Swal.fire({
-                            title: 'Success!',
-                            text: 'Order saved, proceed to print reciept',
-                            icon: 'success',
-                            confirmButtonText: 'OK'
-                        });
+                            resetForm();
+                            Swal.fire({
+                                title: 'Success!',
+                                text: 'Order saved, proceed to print reciept',
+                                icon: 'success',
+                                confirmButtonText: 'OK'
+                            });
+                        } else {
+                            Swal.fire({
+                                title: 'Warning!',
+                                text: response.message ?? 'Something went wrong',
+                                icon: 'warning',
+                                confirmButtonText: 'OK'
+                            });
+                        }
                     },
                     error: function(error) {
                         // Handle any errors
@@ -450,6 +477,10 @@
                 });
             }
         });
+
+        $(document).on('change', 'input[name="qty[]"]', function() {
+            calculateTotals();
+        })
 
         // Calculate totals
         function calculateTotals() {

@@ -146,6 +146,7 @@ class WalkInOrderController extends Controller
      */
     public function store(Request $request)
     {
+        // dd($request->all());
         $request->validate([
             'customer_name' => 'required',
             'vat_no' => 'required',
@@ -161,6 +162,16 @@ class WalkInOrderController extends Controller
             'total_paid' => 'required',
 
         ]);
+
+        foreach ($request->products as $key => $varient) {
+            $variant = ProductVariation::find($request->variations[$key]);
+            if ($variant && ($variant->whole_sale_price == 0 || $variant->product_quantity < (int)$request->qty[$key])) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Check Details. "' . ($variant->product->product_name ?? $variant->product->product_slug) . '" Causing Errors !'
+                ]);
+            }
+        }
 
         try {
             DB::beginTransaction();
@@ -179,6 +190,7 @@ class WalkInOrderController extends Controller
             $order->save();
 
             for ($i = 0; $i < count($request->products); $i++) {
+                $variant = ProductVariation::where('id', $request->variations[$i])->first();
                 $it = new WalkInOrderItem;
                 $it->product_id = $request->products[$i];
                 $it->walk_in_order_id = $order->id;
@@ -200,6 +212,7 @@ class WalkInOrderController extends Controller
                     ]);
                 }
             }
+
             $totalPrice = WalkInOrderItem::where('walk_in_order_id', $order->id)->sum('total_price');
             $order->total_paid = $totalPrice;
             $order->slip_serial_no = 'SL_' . number_format((float)$totalPrice, 2, ".", "");
@@ -228,6 +241,7 @@ class WalkInOrderController extends Controller
             ])->render();
 
             return response()->json([
+                'success' => true,
                 'view' => $view,
                 'print_view' => $printView,
                 'slip_view' => $slip_view,

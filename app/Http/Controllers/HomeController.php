@@ -285,7 +285,7 @@ class HomeController extends Controller
                 $cash_out_pending = VendorPayout::where('status', 'Pending')->sum('requested_amount');
 
 
-                return view('backend.profile.vendor_dashboard', [
+                return view('backend.profile.admin_dashboard', [
                     'total_orders' => $total_orders,
                     'total_revenue' => $total_shop_revenue,
                     'latest_reviews' => $latest_reviews,
