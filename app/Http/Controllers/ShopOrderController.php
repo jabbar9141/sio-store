@@ -396,7 +396,8 @@ class ShopOrderController extends Controller
             //     }
             //     $cost = ($cost + $order->shipping_cost);
             //     return $this->createPayment($cost, $order->id);
-            // } elseif ($request->payment == "PAYSTACK") {
+            // }
+            // elseif ($request->payment == "PAYSTACK") {
             //     $cost = 0;
 
             //     foreach ($order->items as $it) {
