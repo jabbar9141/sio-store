@@ -698,7 +698,7 @@
         </div>
     `;
             $('.' + div).html(order.slip_view);
-            JsBarcode("#barcode", 'SL_' + total.toFixed(2), {
+            JsBarcode("#barcode", order.order.slip_serial_no, {
                 format: "CODE128"
             });
         }

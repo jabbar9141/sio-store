@@ -223,6 +223,7 @@
 
 
     @php
+        use App\Models\product\ProductModel;
         $categories = App\Models\CategoryModel::orderBy('category_id', 'desc')->get();
     @endphp
 
@@ -238,7 +239,9 @@
                                 <h2 class="px-3">{{ $category->category_name }}</h2>
                                 <div class="product-grid px-3">
                                     <?php
-                               $products = DB::table('product')->where('category_id', $category->category_id)->where('admin_approved', 1)->where('product_status', 1)->orderBy('product_id', 'DESC')->limit(4)->get();
+                                 $products = ProductModel::whereHas('variations', function ($query) {
+                                    $query->where('product_quantity', '>', 0);
+                                })->where('category_id', $category->category_id)->where('admin_approved', 1)->where('product_status', 1)->orderBy('product_id', 'DESC')->limit(4)->get();
                                 if ($products->count() > 0) {
                                     foreach ($products as $product) {
                                         // dd($product);
@@ -729,12 +732,13 @@
                                                 </a>
                                                 <div class="d-flex align-items-center mt-2">
                                                     <h5 class="mb-0">
+                                                        <!--{{ session()->get('session_symbol') ?? '€' }}-->
                                                         @php
                                                             $price = 0;
-                                                            if ($r?->variations->first()) {
-                                                                $price = $r?->variations->first()?->price;
+                                                            if ($i?->variations->first()) {
+                                                                $price = $i?->variations->first()?->price;
                                                             } else {
-                                                                $price = App\MyHelpers::getPrice($r->product_price);
+                                                                $price = App\MyHelpers::getPrice($i->product_price);
                                                             }
 
                                                             $price = App\MyHelpers::fromEuroView(

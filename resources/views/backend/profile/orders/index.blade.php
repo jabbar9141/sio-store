@@ -148,8 +148,7 @@
                                                             <br>
                                                             <br>
                                                             <span class="text-secondary">Unit Price :
-                                                                {{ App\MyHelpers::fromEuroView(auth()->user()->currency_id, $item->total_price) }}
-
+                                                                {{ App\MyHelpers::fromEuroView(auth()->user()->currency_id, $item->item->product_price) }}
                                                             </span>
                                                             <br>
                                                             <span class="text-secondary">Qty:

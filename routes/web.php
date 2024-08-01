@@ -15,6 +15,8 @@ use App\Http\Controllers\User\VendorController;
 use App\Http\Controllers\WishlistController;
 use App\Models\Announcement;
 use App\Models\Color;
+use App\Models\product\ProductModel;
+use App\Models\ProductVariation;
 use App\Models\ShippingCost;
 use App\Models\ShopOrder;
 use Illuminate\Support\Facades\Route;
@@ -45,6 +47,16 @@ Route::get('/make-model', function () {
 
     return "Model and migration created successfully";
 });
+
+Route::get('/null-variations', function () {
+    // Generate the model and migration
+    $null_product_ids = ProductVariation::whereNull('whole_sale_price')->pluck('product_id')->toArray();
+
+    ProductModel::whereIn('product_id', $null_product_ids)->update([
+        'admin_approved' => false,
+    ]);
+});
+
 // Route::get('/clear-cache', function () {
 //     $exitCode = Artisan::call('cache:cache');
 
@@ -160,6 +172,7 @@ Route::get('/licence', function () {
 Route::get('create/payment', [ShopOrderController::class, 'createPayment'])->name('create.payment');
 Route::get('cancel/payment/{order_id}', [ShopOrderController::class, 'cancel'])->name('cancel.payment');
 Route::get('success/payment/{order_id}', [ShopOrderController::class, 'success'])->name('success.payment');
+Route::get('success/paystack-payment/{order_id}', [ShopOrderController::class, 'successPaystack'])->name('success.paystack-payment');
 
 // Route::get('/import-test', function () {
 //     ShippingCost::truncate();

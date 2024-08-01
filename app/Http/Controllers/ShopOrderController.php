@@ -193,228 +193,230 @@ class ShopOrderController extends Controller
         $request->validate([
             'billing_address' => 'required',
             // 'shipping_provider' => 'required',
+            'shipping_cost' => 'required',
             'payment' => 'required'
         ]);
-        // try {
+        try {
 
-        $cart = session('cart');
-        $order = new ShopOrder;
-        $order->order_id = UuidV4::uuid4();
-        $order->user_id = Auth::id();
-        $order->shipping_cost = $request->shipping_cost;
-        $order->save();
-
-        $order_id = $order->id;
-
-        if (($cart) && count($cart) > 0) {
-            $order->metadata = json_encode($cart);
+            $cart = session('cart');
+            $order = new ShopOrder;
+            $order->order_id = UuidV4::uuid4();
+            $order->user_id = Auth::id();
+            $order->shipping_cost = $request->shipping_cost;
             $order->save();
 
-            foreach ($cart as $i) {
-                $t = new ShopOrderItem;
-                $t->order_id = $order->id;
-                $t->item_id = $i['product_id'];
-                $t->variant = $i['variations'] ?? '';
-                $t->price = $i['price'] / $i['qty'];
-                $t->qty = $i['qty'] ?? 1;
-                $t->total_price = $i['price'];
-                $t->product_variation_id = $i['variation_id'] ?? null;
-                $t->save();
-            }
-        }
+            $order_id = $order->id;
 
-        // $order = ShopOrder::where('id', $order_id)->first();
+            if (($cart) && count($cart) > 0) {
+                $order->metadata = json_encode($cart);
+                $order->save();
 
-        $order->billing_address_id = $request->billing_address;
-        $order->shipping_address_id = $request->billing_address;
-        $order->shipping_method = $request->shipping_provider;
-        $order->payment_method = $request->payment;
-        $order->save();
-
-        // $order->shipping_cost = (array) json_decode($order->shipping_cost);
-        $YOUR_DOMAIN = env('APP_URL');
-
-        // dd($order->items);
-        // DB::beginTransaction();
-
-        if ($request->payment == "STRIPE") {
-            $items = [];
-
-            foreach ($order->items as $it) {
-                $price = $it->total_price ?? 0; //
-                if ($price == 0) {
-                    $price = $it->variation->price * $it->qty;
+                foreach ($cart as $i) {
+                    $t = new ShopOrderItem;
+                    $t->order_id = $order->id;
+                    $t->item_id = $i['product_id'];
+                    $t->variant = $i['variations'] ?? '';
+                    $t->price = $i['price'] / $i['qty'];
+                    $t->qty = $i['qty'] ?? 1;
+                    $t->total_price = $i['price'];
+                    $t->product_variation_id = $i['variation_id'] ?? null;
+                    $t->save();
                 }
+            }
+
+            // $order = ShopOrder::where('id', $order_id)->first();
+
+            $order->billing_address_id = $request->billing_address;
+            $order->shipping_address_id = $request->billing_address;
+            $order->shipping_method = $request->shipping_provider;
+            $order->payment_method = $request->payment;
+            $order->save();
+
+            // $order->shipping_cost = (array) json_decode($order->shipping_cost);
+            $YOUR_DOMAIN = env('APP_URL');
+
+            // dd($order->items);
+            // DB::beginTransaction();
+
+            if ($request->payment == "STRIPE") {
+                $items = [];
+
+                foreach ($order->items as $it) {
+                    $price = $it->total_price ?? 0; //
+                    if ($price == 0) {
+                        $price = $it->variation->price * $it->qty;
+                    }
+                    $t = [
+                        'price_data' => [
+                            'currency' => 'EUR',
+                            'product_data' => [
+                                'name' => $it->item->product_name,
+                            ],
+                            'unit_amount_decimal' => ($price) * 100
+                        ],
+                        'quantity' => $it->qty,
+                    ];
+                    array_push($items, $t);
+                }
+
+                //one last item to represent the shipping costs
                 $t = [
                     'price_data' => [
                         'currency' => 'EUR',
                         'product_data' => [
-                            'name' => $it->item->product_name,
+                            'name' => 'Shipping fee for ' . $request->shipping_provider,
                         ],
-                        'unit_amount_decimal' => ($price) * 100
+                        'unit_amount_decimal' => ($order->shipping_cost[strtolower($request->shipping_provider)]) * 100
                     ],
-                    'quantity' => $it->qty,
+                    'quantity' => 1,
                 ];
+
                 array_push($items, $t);
-            }
 
-            //one last item to represent the shipping costs
-            $t = [
-                'price_data' => [
-                    'currency' => 'EUR',
-                    'product_data' => [
-                        'name' => 'Shipping fee for ' . $request->shipping_provider,
-                    ],
-                    'unit_amount_decimal' => ($order->shipping_cost[strtolower($request->shipping_provider)]) * 100
-                ],
-                'quantity' => 1,
-            ];
-
-            array_push($items, $t);
-
-            \Stripe\Stripe::setApiKey(env("STRIPE_SECRET"));
-            header('Content-Type: application/json');
+                \Stripe\Stripe::setApiKey(env("STRIPE_SECRET"));
+                header('Content-Type: application/json');
 
 
 
-            $checkout_session = \Stripe\Checkout\Session::create([
-                'line_items' => $items,
-                'mode' => 'payment',
-                'success_url' => $YOUR_DOMAIN . '/payment-success?session_id={CHECKOUT_SESSION_ID}',
-                'cancel_url' => $YOUR_DOMAIN . '/payment-error?session_id={CHECKOUT_SESSION_ID}',
-            ]);
-
-            //create our own order payment intent
-            $lp = new ShopOrderPayment;
-
-            $lp->ref = $checkout_session->id;
-            $lp->payment_method = 'STRIPE';
-            $lp->order_id = $order->id;
-            $lp->amount = $checkout_session->amount_total;
-            $lp->metadata = json_encode($checkout_session);
-            $lp->status = 'Pending';
-            $lp->save();
-
-            //empty cart
-            $cart = Cart::where('user_id', Auth::id())->where('status', 1)->first();
-            $cart->status = 0;
-            $cart->save();
-            session()->forget('cart');
-
-            DB::commit();
-            //send them to stripe hosted checout page
-            return redirect()->away($checkout_session->url);
-        } elseif ($request->payment == "SUMUP") {
-            $cost = 0;
-
-            foreach ($order->items as $it) {
-                $price = $it->total_price ?? 0; //
-                if ($price == 0) {
-                    $price = $it->variation->price * $it->qty;
-                }
-                $cost = $cost + ($price);
-            }
-
-            //one last item to represent the shipping costs
-            // $cost = $cost + ($order->shipping_cost[strtolower($request->shipping_provider)] * 100);
-            $cost = $cost + ($order->shipping_cost);
-
-            try {
-                $sumup = new \SumUp\SumUp([
-                    'app_id'     => env('SUMUP_KEY'),
-                    'app_secret' => env('SUMUP_SECRET'),
-                    'grant_type' => 'client_credentials',
-                    'scopes'      => ['payments', 'transactions.history', 'user.app-settings', 'user.profile_readonly']
+                $checkout_session = \Stripe\Checkout\Session::create([
+                    'line_items' => $items,
+                    'mode' => 'payment',
+                    'success_url' => $YOUR_DOMAIN . '/payment-success?session_id={CHECKOUT_SESSION_ID}',
+                    'cancel_url' => $YOUR_DOMAIN . '/payment-error?session_id={CHECKOUT_SESSION_ID}',
                 ]);
-                // $accessToken = $sumup->getAccessToken();
-                // $value = $accessToken->getValue();
-                $checkoutService = $sumup->getCheckoutService();
-                $checkoutResponse = $checkoutService->create(
-                    $cost,
-                    'EUR',
-                    $order_id . "_" . rand(100000, 999999),
-                    env('SUMUP_EMAIL'),
-                    'Payment Intent for order: ' . $order_id,
-                    Auth::user()->email,
-                    $YOUR_DOMAIN . '/payment-success?session_id={CHECKOUT_SESSION_ID}'
-                );
-                $paymentIntent = $checkoutResponse->getBody();
-            } catch (\SumUp\Exceptions\SumUpAuthenticationException $e) {
-                Log::error('Authentication error: ' . $e->getMessage(), [$e]);
-                return back()->with(['error' => "SumUp checkout failed, please try again later."]);
-            } catch (\SumUp\Exceptions\SumUpResponseException $e) {
-                Log::error('Response error: ' . $e->getMessage(), [$e]);
-                return back()->with(['error' => "SumUp checkout failed, please try again later."]);
-            } catch (\SumUp\Exceptions\SumUpSDKException $e) {
-                Log::error('SumUp SDK error: ' . $e->getMessage(), [$e]);
-                return back()->with(['error' => "SumUp checkout failed, please try again later."]);
-            }
 
-            //create our own order payment intent
-            $lp = new ShopOrderPayment;
+                //create our own order payment intent
+                $lp = new ShopOrderPayment;
 
-            $lp->ref = $paymentIntent->id;
-            $lp->payment_method = 'SUMUP';
-            $lp->order_id = $order->id;
-            $lp->amount = $cost;
-            $lp->metadata = json_encode($paymentIntent);
-            $lp->status = 'Pending';
-            $lp->save();
+                $lp->ref = $checkout_session->id;
+                $lp->payment_method = 'STRIPE';
+                $lp->order_id = $order->id;
+                $lp->amount = $checkout_session->amount_total;
+                $lp->metadata = json_encode($checkout_session);
+                $lp->status = 'Pending';
+                $lp->save();
 
-            foreach ($order->items as $item) {
-                $variation = ProductVariation::where('id', $item->product_variation_id)->first();
-                if ($variation) {
-                    $variation->product_quantity = $variation->product_quantity - $item->qty;
-                    $variation->save();
-                } else {
-                    $item->item->product_quantity = $item->item->product_quantity - $item->qty;
-                    $item->item->save();
+                //empty cart
+                $cart = Cart::where('user_id', Auth::id())->where('status', 1)->first();
+                $cart->status = 0;
+                $cart->save();
+                session()->forget('cart');
+
+                DB::commit();
+                //send them to stripe hosted checout page
+                return redirect()->away($checkout_session->url);
+            } elseif ($request->payment == "SUMUP") {
+                $cost = 0;
+
+                foreach ($order->items as $it) {
+                    $price = $it->total_price ?? 0; //
+                    if ($price == 0) {
+                        $price = $it->variation->price * $it->qty;
+                    }
+                    $cost = $cost + ($price);
                 }
-            }
 
-            //empty cart
-            $cart = Cart::where('user_id', Auth::id())->where('status', 1)->first();
-            $cart->status = 0;
-            $cart->save();
-            session()->forget('cart');
+                //one last item to represent the shipping costs
+                // $cost = $cost + ($order->shipping_cost[strtolower($request->shipping_provider)] * 100);
+                $cost = $cost + ($order->shipping_cost);
 
-            // DB::commit();
-            //return the cient secret of the payment intent
-            return view('user.complete_order', ['client_secret' => $paymentIntent->id]);
-        } elseif ($request->payment == "PAYPAL") {
-            $cost = 0;
-
-            foreach ($order->items as $it) {
-                $price = $it->total_price ?? 0; //
-                if ($price == 0) {
-                    $price = $it->variation->price * $it->qty;
+                try {
+                    $sumup = new \SumUp\SumUp([
+                        'app_id'     => env('SUMUP_KEY'),
+                        'app_secret' => env('SUMUP_SECRET'),
+                        'grant_type' => 'client_credentials',
+                        'scopes'      => ['payments', 'transactions.history', 'user.app-settings', 'user.profile_readonly']
+                    ]);
+                    // $accessToken = $sumup->getAccessToken();
+                    // $value = $accessToken->getValue();
+                    $checkoutService = $sumup->getCheckoutService();
+                    $checkoutResponse = $checkoutService->create(
+                        $cost,
+                        'EUR',
+                        $order_id . "_" . rand(100000, 999999),
+                        env('SUMUP_EMAIL'),
+                        'Payment Intent for order: ' . $order_id,
+                        Auth::user()->email,
+                        $YOUR_DOMAIN . '/payment-success?session_id={CHECKOUT_SESSION_ID}'
+                    );
+                    $paymentIntent = $checkoutResponse->getBody();
+                } catch (\SumUp\Exceptions\SumUpAuthenticationException $e) {
+                    Log::error('Authentication error: ' . $e->getMessage(), [$e]);
+                    return back()->with(['error' => "SumUp checkout failed, please try again later."]);
+                } catch (\SumUp\Exceptions\SumUpResponseException $e) {
+                    Log::error('Response error: ' . $e->getMessage(), [$e]);
+                    return back()->with(['error' => "SumUp checkout failed, please try again later."]);
+                } catch (\SumUp\Exceptions\SumUpSDKException $e) {
+                    Log::error('SumUp SDK error: ' . $e->getMessage(), [$e]);
+                    return back()->with(['error' => "SumUp checkout failed, please try again later."]);
                 }
-                $cost = $cost + $price;
-            }
-            $cost = ($cost + $order->shipping_cost);
-            return $this->createPayment($cost, $order->id);
-        }
-        // elseif ($request->payment == "PAYSTACK") {
-        //     $cost = 0;
 
-        //     foreach ($order->items as $it) {
-        //         $price = $it->total_price ?? 0; //
-        //         if ($price == 0) {
-        //             $price = $it->variation->price * $it->qty;
-        //         }
-        //         $cost = $cost + ($price * 100);
-        //     }
-        //     $cost = ($cost + $order->shipping_cost);
-        // }
-        else {
+                //create our own order payment intent
+                $lp = new ShopOrderPayment;
+
+                $lp->ref = $paymentIntent->id;
+                $lp->payment_method = 'SUMUP';
+                $lp->order_id = $order->id;
+                $lp->amount = $cost;
+                $lp->metadata = json_encode($paymentIntent);
+                $lp->status = 'Pending';
+                $lp->save();
+
+                foreach ($order->items as $item) {
+                    $variation = ProductVariation::where('id', $item->product_variation_id)->first();
+                    if ($variation) {
+                        $variation->product_quantity = $variation->product_quantity - $item->qty;
+                        $variation->save();
+                    } else {
+                        $item->item->product_quantity = $item->item->product_quantity - $item->qty;
+                        $item->item->save();
+                    }
+                }
+
+                //empty cart
+                $cart = Cart::where('user_id', Auth::id())->where('status', 1)->first();
+                $cart->status = 0;
+                $cart->save();
+                session()->forget('cart');
+
+                // DB::commit();
+                //return the cient secret of the payment intent
+                return view('user.complete_order', ['client_secret' => $paymentIntent->id]);
+            }
+
+            // elseif ($request->payment == "PAYPAL") {
+            //     $cost = 0;
+
+            //     foreach ($order->items as $it) {
+            //         $price = $it->total_price ?? 0; //
+            //         if ($price == 0) {
+            //             $price = $it->variation->price * $it->qty;
+            //         }
+            //         $cost = $cost + $price;
+            //     }
+            //     $cost = ($cost + $order->shipping_cost);
+            //     return $this->createPayment($cost, $order->id);
+            // } elseif ($request->payment == "PAYSTACK") {
+            //     $cost = 0;
+
+            //     foreach ($order->items as $it) {
+            //         $price = $it->total_price ?? 0; //
+            //         if ($price == 0) {
+            //             $price = $it->variation->price * $it->qty;
+            //         }
+            //         $cost = $cost + ($price * 100);
+            //     }
+            //     $cost = ($cost + $order->shipping_cost);
+            // }
+            else {
+                DB::rollBack();
+                return back()->with(['error' => "Failed to initiate payment, please try again later"]);
+            }
+        } catch (Exception $e) {
             DB::rollBack();
+            Log::error($e->getMessage(), [$e]);
             return back()->with(['error' => "Failed to initiate payment, please try again later"]);
         }
-        // } catch (Exception $e) {
-        //     DB::rollBack();
-        //     Log::error($e->getMessage(), [$e]);
-        //     return back()->with(['error' => "Failed to initiate payment, please try again later"]);
-        // }
     }
 
     public function payment_success(Request $request)

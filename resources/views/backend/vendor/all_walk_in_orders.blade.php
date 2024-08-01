@@ -63,8 +63,8 @@
                         <form action="" class="form-inline" method="get">
                             <div class="row mt-3">
                                 <div class="col-md-8">
-                                    <input type="text" class="form-control" name="order_id" placeholder="order id"
-                                        value="{{ request()->order_id ?? '' }}" required>
+                                    <input type="text" class="form-control" name="slip_serial_no" placeholder="order id"
+                                        value="{{ request()->slip_serial_no ?? '' }}" required>
                                 </div>
                                 <div class="col-md-2">
                                     <button type="submit" class="btn btn-primary">Search</button>
@@ -147,19 +147,19 @@
                                 @foreach ($entries as $entry)
                                     @php
                                         $product_ids = $entry->items->pluck('product_id')->toArray();
-                                        $productNames = implode(
-                                            ', ',
-                                            ProductModel::where('product_id', $product_ids)
+                                        $productNames = ProductModel::whereIn('product_id', $product_ids)
                                                 ->pluck('product_name')
-                                                ->toArray(),
-                                        );
+                                                ->toArray();
+                                        
                                         $productQuantity = implode(', ', $entry->items->pluck('qty')->toArray());
 
                                     @endphp
                                     <tr>
-                                        <td>{{ $entry->order_id }}</td>
+                                        <td>{{ $entry->slip_serial_no }}</td>
                                         <td>{{ $entry->customer_name }}</td>
-                                        <td>{{ $productNames }}</td>
+                                        <td> @foreach ($productNames as $productName)
+                                                  {{ $productName }}<br>
+                                             @endforeach</td>
                                         <td>{{ $productQuantity }}</td>
                                         <td>{{ $entry->created_at }}</td>
                                         <td>{{ \App\MyHelpers::fromEuroView(auth()->user()->currency_id,$entry->total_paid) }}</td>

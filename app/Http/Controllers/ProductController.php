@@ -1088,6 +1088,7 @@ class ProductController extends Controller
     public function getVariationDetails(Request $request)
     {
         $currency_id =  session('currency_id', Currency::where('status', true)->first()?->id ?? 0);
+        $product = ProductModel::find($request->product_id);
         $query = ProductVariation::query();
         $query->where('product_id', $request->product_id);
         if ($request->filled('color_name')) {
@@ -1118,7 +1119,7 @@ class ProductController extends Controller
                         return response()->json([
                             'success' => true,
                             'product_variation' => $productVariation,
-                            'product_images' => json_decode($productVariation->image_url),
+                            'product_images' => count(json_decode($productVariation->image_url)) > 0 ? json_decode($productVariation->image_url) : $product?->product_thumbnail,
                             'video_url' => json_decode($productVariation->video_url),
                         ]);
                     }
@@ -1131,7 +1132,7 @@ class ProductController extends Controller
             return response()->json([
                 'success' => true,
                 'product_variation' => $productVariation,
-                'product_images' => json_decode($productVariation->image_url),
+                'product_images' => count(json_decode($productVariation->image_url)) > 0 ? json_decode($productVariation->image_url) : $product?->product_thumbnail,
                 'video_url' => json_decode($productVariation->video_url),
                 'formatedPrice' => MyHelpers::fromEuroView($currency_id, $productVariation->price)
             ]);

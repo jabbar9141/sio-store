@@ -23,30 +23,42 @@ class WalkInOrderController extends Controller
      */
     public function index(Request $request)
     {
-        if (($request->start_date == null || $request->end_date == null) && $request->order_id == null) {
+        // dd($request->all());
+        if (($request->start_date == null || $request->end_date == null) && $request->slip_serial_no == null) {
             return view('backend.vendor.all_walk_in_orders');
-        } elseif ($request->order_id != null) {
+        } elseif ($request->slip_serial_no != null) {
+            $searchInput = rtrim($request->slip_serial_no, '0');
 
-            $entries = WalkInOrder::where('order_id', $request->order_id)->get();
+            // Fetch entries with a slip_serial_no that partially matches the adjusted search input
+            $entries = WalkInOrder::whereRaw("TRIM(TRAILING '0' FROM slip_serial_no) LIKE ?", ['%' . $searchInput . '%'])->get();
 
             $stats = [];
-            $stats['total_amt'] = WalkInOrder::where('order_id', $request->order_id)->sum('total_paid') ?? 0;
-            $stats['total_success'] = WalkInOrder::where('order_id', $request->order_id)->where('status', 'Done')->sum('total_paid') ?? 0;
-            $stats['total_pending'] = WalkInOrder::where('order_id', $request->order_id)->where('status', 'Pending')->sum('total_paid') ?? 0;
-            $stats['total_cancelled'] = WalkInOrder::where('order_id', $request->order_id)->where('status', 'Cancelled')->sum('total_paid') ?? 0;
+            $stats['total_amt'] = WalkInOrder::whereRaw("TRIM(TRAILING '0' FROM slip_serial_no) = ?", [$searchInput])->sum('total_paid') ?? 0;
+            $stats['total_success'] = WalkInOrder::whereRaw("TRIM(TRAILING '0' FROM slip_serial_no) = ?", [$searchInput])->where('status', 'Done')->sum('total_paid') ?? 0;
+            $stats['total_pending'] = WalkInOrder::whereRaw("TRIM(TRAILING '0' FROM slip_serial_no) = ?", [$searchInput])->where('status', 'Pending')->sum('total_paid') ?? 0;
+            $stats['total_cancelled'] = WalkInOrder::whereRaw("TRIM(TRAILING '0' FROM slip_serial_no) = ?", [$searchInput])->where('status', 'Cancelled')->sum('total_paid') ?? 0;
 
-            $stats['total_count'] = WalkInOrder::where('order_id', $request->order_id)->count() ?? 0;
-            $stats['count_success'] = WalkInOrder::where('order_id', $request->order_id)->where('status', 'Done')->count() ?? 0;
-            $stats['count_pending'] = WalkInOrder::where('order_id', $request->order_id)->where('status', 'Pending')->count() ?? 0;
-            $stats['count_cancelled'] = WalkInOrder::where('order_id', $request->order_id)->where('status', 'Cancelled')->count() ?? 0;
+            $stats['total_count'] = WalkInOrder::whereRaw("TRIM(TRAILING '0' FROM slip_serial_no) = ?", [$searchInput])->count() ?? 0;
+            $stats['count_success'] = WalkInOrder::whereRaw("TRIM(TRAILING '0' FROM slip_serial_no) = ?", [$searchInput])->where('status', 'Done')->count() ?? 0;
+            $stats['count_pending'] = WalkInOrder::whereRaw("TRIM(TRAILING '0' FROM slip_serial_no) = ?", [$searchInput])->where('status', 'Pending')->count() ?? 0;
+            $stats['count_cancelled'] = WalkInOrder::whereRaw("TRIM(TRAILING '0' FROM slip_serial_no) = ?", [$searchInput])->where('status', 'Cancelled')->count() ?? 0;
 
-            $stats['total_customers'] = WalkInOrder::where('order_id', $request->order_id)->distinct('customer_name')->count() ?? 0;
-            $stats['total_orders'] = WalkInOrder::where('order_id', $request->order_id)->count() ?? 0;
+            $stats['total_customers'] = WalkInOrder::whereRaw("TRIM(TRAILING '0' FROM slip_serial_no) = ?", [$searchInput])->distinct('customer_name')->count('customer_name') ?? 0;
+            $stats['total_orders'] = WalkInOrder::whereRaw("TRIM(TRAILING '0' FROM slip_serial_no) = ?", [$searchInput])->count() ?? 0;
             $stats['total_items'] = 0;
-            if (count($entries) > 0) {
-                # code...
-                $stats['total_items'] = WalkInOrderItem::where('walk_in_order_id', $request->order_id)->count() ?? 0;
+
+            if ($entries->isNotEmpty()) {
+                $total = 0;
+
+                foreach ($entries as $entry) {
+                    $total += $entry->items->count() ?? 0;
+                }
+
+                $stats['total_items'] = $total;
             }
+
+
+
 
             return view('backend.vendor.all_walk_in_orders', ['entries' => $entries, 'stats' => $stats]);
         } else {
@@ -96,7 +108,11 @@ class WalkInOrderController extends Controller
             });
         })->get();
         $products = ProductModel::where('product_status', 1)->where('vendor_id', Auth::user()->vendor_shop->vendor_id)
+            ->whereHas('variations', function ($query) {
+                $query->where('product_quantity', '>', 0)->where('whole_sale_price', '>', 0);
+            })
             ->orderBy('product_name', 'ASC')->paginate(20);
+
 
         return view('backend.vendor.walk-in-order')->with([
             'customers' => $customers,
@@ -107,13 +123,15 @@ class WalkInOrderController extends Controller
     public function search(Request $request)
     {
         $query = $request->get('query');
-        $products = ProductModel::with(['images'])->where(function ($q) use ($query) {
+        $products = ProductModel::whereHas('variations', function ($query) {
+            $query->where('product_quantity', '>', 0)->where('whole_sale_price', '>', 0);
+        })->with(['images'])->where(function ($q) use ($query) {
             $q->where('product_name', 'LIKE', "%{$query}%")
                 ->orWhere('product_code', 'LIKE', "%{$query}%");
         })
             ->where('vendor_id', Auth::user()->vendor_shop->vendor_id)
             ->where('product_status', 1)
-            ->where('product_quantity', '>', 0)
+
             ->limit(20)
             ->get();
 
@@ -146,6 +164,7 @@ class WalkInOrderController extends Controller
 
         try {
             DB::beginTransaction();
+
             $order = new WalkInOrder;
             $order->customer_name = $request->customer_name;
             $order->vat_no = $request->vat_no;
@@ -183,6 +202,7 @@ class WalkInOrderController extends Controller
             }
             $totalPrice = WalkInOrderItem::where('walk_in_order_id', $order->id)->sum('total_price');
             $order->total_paid = $totalPrice;
+            $order->slip_serial_no = 'SL_' . number_format((float)$totalPrice, 2, ".", "");
             $order->save();
             DB::commit();
             $r = WalkInOrder::with(['items', 'items.product'])->where('id', $order->id)->first();

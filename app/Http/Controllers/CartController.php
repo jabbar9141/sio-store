@@ -98,7 +98,7 @@ class CartController extends Controller
 
     public function addItem(Request $request)
     {
-        // dd($request->all());
+        
         // Validation rules
         $request->validate([
             'product_id' => 'required|exists:product,product_id', // Make sure the table name and column name are correct
@@ -111,10 +111,7 @@ class CartController extends Controller
 
             if ($request->filled('variation_id')) {
                 $variation = ProductVariation::where('product_id', $request->product_id)->where('id', $request->variation_id)->first();
-            } else {
-                $variation = ProductVariation::where('product_id', $request->product_id)->first();
             }
-
             if ($request->qty > $variation->product_quantity) {
                 return back()->with('error', 'Selected Quantity is not valid quantity for product');
             }
