@@ -256,7 +256,7 @@
                                         <div class="m-2" onclick="selectProduct(this)"
                                             data-name="[{{ $pp->product_code }}] {{ $pp->product_name }}"
                                             data-price="{{ $price }}" data-img="{{ $image }}"
-                                            data-only-price="{{ $only_price }}" data-id="{{ $pp->product_id }}">
+                                            data-id="{{ $pp->product_id }}">
                                             <img src="/uploads/images/product/{{ $image }}" class="card-img-top"
                                                 alt="IMG" style="width: 100%">
                                             <p>[{{ $pp->product_code }}] {{ $pp->product_name }}</p>
@@ -360,8 +360,6 @@
             let list = $('#selected-items-list');
             let product_name = $(obj).data('name');
             let p_price = $(obj).data('price');
-            let only_price = $(obj).data('only_price');
-            console.log("🚀 ~ selectProduct ~ only_price:", only_price)
             let product_img = $(obj).data('img');
             let product_id = $(obj).data('id');
             let mainParent = $(obj).parent();
@@ -375,15 +373,15 @@
             if (existing_product.length > 0) {
                 let quantity = $(existing_product).find('.qty-field').val();
                 $(existing_product).find('.qty-field').val(parseInt(quantity) + 1);
-                let var_price = parseFloat(product_price) + parseFloat(variationDiv.find(
-                    '.productVariation option:selected').data('variationprice'));
+                // let var_price = parseFloat(product_price) + parseFloat(variationDiv.find(
+                //     '.productVariation option:selected').data('variationprice'));
 
-                let text = $(existing_product).find('.price_td').text().replace(/[^0-9.-]+/g, '');
+                // let text = $(existing_product).find('.price_td').text().replace(/[^0-9.-]+/g, '');
 
-                let new_price = parseFloat(text);
-                if (!isNaN(new_price)) {
-                    $(existing_product).find('.price_td').text(new_price + new_price);
-                }
+                // let new_price = parseFloat(text);
+                // if (!isNaN(new_price)) {
+                //     $(existing_product).find('.price_td').text(new_price + new_price);
+                // }
             } else {
 
                 $('#product-list').html('');
@@ -576,13 +574,13 @@
 
                     <tbody>
                         ${order.order.items.map(item => `
-                                                                                    <tr>
-                                                                                        <td>${item.product.product_name}</td>
-                                                                                        <td>${item.product.product_code}</td>
-                                                                                        <td>${item.qty}</td>
-                                                                                        <td>&euro; ${item.price.toFixed(2)}</td>
-                                                                                    </tr>
-                                                                                `).join('')}
+                                                                                                                                            <tr>
+                                                                                                                                                <td>${item.product.product_name}</td>
+                                                                                                                                                <td>${item.product.product_code}</td>
+                                                                                                                                                <td>${item.qty}</td>
+                                                                                                                                                <td>&euro; ${item.price.toFixed(2)}</td>
+                                                                                                                                            </tr>
+                                                                                                                                        `).join('')}
                     </tbody>
                 </table>
                 <p><strong>Total Paid:</strong> &euro; ${order.order.total_paid.toFixed(2)}</p>
@@ -638,12 +636,12 @@
                 <td style="width: 20%;margin-left: 5px;">Amount</td>
             </tr>
                 ${response.order.items.map((item, index) => `<tr class="item" style="border-bottom: 1px solid #eee;">
-                                                                    <td>${ index + 1 }</td>
-                                                                    <td>${item.product.product_name}</td>
-                                                                    <td>${item.product.product_code}</td>
-                                                                    <td>${item.qty}</td>
-                                                                    <td>${item.price.toFixed(2)} €</td>
-                                                                </tr>`).join('')}
+                                                                                                                            <td>${ index + 1 }</td>
+                                                                                                                            <td>${item.product.product_name}</td>
+                                                                                                                            <td>${item.product.product_code}</td>
+                                                                                                                            <td>${item.qty}</td>
+                                                                                                                            <td>${item.price.toFixed(2)} €</td>
+                                                                                                                        </tr>`).join('')}
 
         </table>
         <table style="width: 100%; margin-top: 50px;">
@@ -664,11 +662,11 @@
                 <td colspan="2">CALCULATION</td>
             </tr>
             ${response.order.items.map(item => `
-                                                                 <tr class="item" style="border-bottom: 1px solid #eee;">
-                                                                    <td colspan="5">Amount of products or services</td>
-                                                                    <td colspan="2">${item.price.toFixed(2)} €</td>
-                                                                </tr>
-                                                                `).join('')}
+                                                                                                                         <tr class="item" style="border-bottom: 1px solid #eee;">
+                                                                                                                            <td colspan="5">Amount of products or services</td>
+                                                                                                                            <td colspan="2">${item.price.toFixed(2)} €</td>
+                                                                                                                        </tr>
+                                                                                                                        `).join('')}
 
             <tr class="total" style="border-top: 2px solid #eee; font-weight: bold;">
                 <td colspan="5">Net payable</td>
@@ -699,15 +697,15 @@
                 <div style="width: 100%; margin-bottom: 20px;">
                     <table style="width: 100%; border-collapse: collapse;">
                         ${order.order.items.map(item => `
-                                                                            <tr>
-                                                                                <td style="padding: 5px;">${item.product.product_name}</td>
-                                                                            </tr>
-                                                                            <tr>
-                                                                                <td style="padding: 5px;">${item.qty} x ${item.price.toFixed(2)}</td>
-                                                                                <td style="padding: 5px; text-align: right;">${(item.qty * item.price).toFixed(2)}</td>
-                                                                            </tr>
-                                                                            ${total += item.qty * item.price}
-                                                                        `).join('')}
+                                                                                                                                    <tr>
+                                                                                                                                        <td style="padding: 5px;">${item.product.product_name}</td>
+                                                                                                                                    </tr>
+                                                                                                                                    <tr>
+                                                                                                                                        <td style="padding: 5px;">${item.qty} x ${item.price.toFixed(2)}</td>
+                                                                                                                                        <td style="padding: 5px; text-align: right;">${(item.qty * item.price).toFixed(2)}</td>
+                                                                                                                                    </tr>
+                                                                                                                                    ${total += item.qty * item.price}
+                                                                                                                                `).join('')}
                     </table>
                 </div>
                 <div style="width: 100%; margin-bottom: 20px;">
