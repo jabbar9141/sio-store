@@ -185,7 +185,13 @@
                             </tbody>
                             <tfoot>
                                 <tr>
-                                    <th colspan="7" class="text-center">Total</th>
+                                    <td></td>
+                                    <td></td>
+                                    <td></td>
+                                    <td></td>
+                                    <td></td>
+                                    <td></td>
+                                    <th class="text-center">Total</th>
                                     <th>{{ \App\MyHelpers::fromEuroView(auth()->user()->currency_id, $entries->sum('total_paid')) }}
                                     </th>
                                 </tr>
@@ -228,24 +234,40 @@
 
         function exportTableToCSV(filename) {
             var csv = [];
-            var rows = document.querySelectorAll('table tr');
+            var rows = document.querySelectorAll('#transaction-table tr');
 
             for (var i = 0; i < rows.length; i++) {
                 var row = [],
-                    cols = rows[i].querySelectorAll('td, th');
+                    cols = rows[i].querySelectorAll('th, td');
 
-                for (var j = 0; j < cols.length; j++)
-                    row.push(cols[j].innerText);
+                for (var j = 0; j < cols.length; j++) {
+                    let cellContent = cols[j].innerText.replace(/\n/g, ', ');
+                    row.push('"' + cellContent + '"'); // Enclose in quotes to handle commas and newlines
+                }
 
                 csv.push(row.join(','));
+            }
+
+            // Adding total row separately to ensure it aligns with the amount column
+            let totalRow = document.querySelector('#transaction-table tfoot tr');
+            if (totalRow) {
+                var totalCols = totalRow.querySelectorAll('th');
+                var total = [];
+
+                for (var j = 0; j < totalCols.length; j++) {
+                    let cellContent = totalCols[j].innerText.replace(/\n/g, ', ');
+                    total.push('"' + cellContent + '"');
+                }
+
             }
 
             downloadCSV(csv.join('\n'), filename);
         }
 
         document.getElementById('csv-btn').addEventListener('click', function() {
-            if ($('input[name="start_date"]').val() && $('input[name="end_date"]').val()) {
-                exportTableToCSV('transactions.csv');
+            if (document.querySelector('input[name="start_date"]').value && document.querySelector(
+                    'input[name="end_date"]').value) {
+                exportTableToCSV('SIOSTORE_POS.csv');
             }
         });
 
