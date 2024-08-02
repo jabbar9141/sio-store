@@ -141,9 +141,9 @@
                                     <th>Products</th>
                                     <th>Quantity</th>
                                     <th>Date</th>
-                                    <th>Amount</th>
                                     <th>Status</th>
                                     <th>Method</th>
+                                    <th>Amount</th>
 
                                 </tr>
                             </thead>
@@ -168,8 +168,6 @@
                                         </td>
                                         <td>{{ $productQuantity }}</td>
                                         <td>{{ $entry->created_at }}</td>
-                                        <td>{{ \App\MyHelpers::fromEuroView(auth()->user()->currency_id, $entry->total_paid) }}
-                                        </td>
                                         <td>
                                             @if ($entry->status == 'Done')
                                                 <span class="badge bg-success">Done</span>
@@ -180,10 +178,18 @@
                                             @endif
                                         </td>
                                         <td>{{ $entry->payment_method }}</td>
-
+                                        <td>{{ \App\MyHelpers::fromEuroView(auth()->user()->currency_id, $entry->total_paid) }}
+                                        </td>
                                     </tr>
                                 @endforeach
                             </tbody>
+                            <tfoot>
+                                <tr>
+                                    <th colspan="7" class="text-center">Total</th>
+                                    <th>{{ \App\MyHelpers::fromEuroView(auth()->user()->currency_id, $entries->sum('total_paid')) }}
+                                    </th>
+                                </tr>
+                            </tfoot>
                         </table>
                     </div>
                 @else
