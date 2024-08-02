@@ -379,24 +379,23 @@ class ShopOrderController extends Controller
                 $cart->save();
                 session()->forget('cart');
 
-                // DB::commit();
+                DB::commit();
                 //return the cient secret of the payment intent
                 return view('user.complete_order', ['client_secret' => $paymentIntent->id]);
+            } elseif ($request->payment == "PAYPAL") {
+                $cost = 0;
+
+                foreach ($order->items as $it) {
+                    $price = $it->total_price ?? 0; //
+                    if ($price == 0) {
+                        $price = $it->variation->price * $it->qty;
+                    }
+                    $cost = $cost + $price;
+                }
+                $cost = ($cost + $order->shipping_cost);
+
+                return $this->createPayment($cost, $order->id);
             }
-
-            // elseif ($request->payment == "PAYPAL") {
-            //     $cost = 0;
-
-            //     foreach ($order->items as $it) {
-            //         $price = $it->total_price ?? 0; //
-            //         if ($price == 0) {
-            //             $price = $it->variation->price * $it->qty;
-            //         }
-            //         $cost = $cost + $price;
-            //     }
-            //     $cost = ($cost + $order->shipping_cost);
-            //     return $this->createPayment($cost, $order->id);
-            // }
             // elseif ($request->payment == "PAYSTACK") {
             //     $cost = 0;
 

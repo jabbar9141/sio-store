@@ -98,7 +98,7 @@
                                 <hr>
                                 <h5>Product variations</h5>
                                 <div id="form-wrapper">
-                                    <div class="input-group row">
+                                    <div class="input-group row" id>
                                         <div class="col-md-3 mt-2">
                                             <label for="color">Color<span class="text-danger">*</span></label>
                                             <input class="form-control" type="text" name="colors[]" id="">
@@ -668,10 +668,12 @@
                 return false;
             }
 
+            let parent_group = $(obj).parents('.input-group');
+
             if (input_name == 'whole_sale_price[]') {
-                let price = $(obj).parents('#form-wrapper').find('input[name="prices[]"]').val();
+                let price = $(parent_group).find('input[name="prices[]"]').val();
                 if (price <= $(obj).val()) {
-                    $(obj).val(price - 0.1)
+                    $(obj).val(0)
                     Swal.fire({
                         icon: 'warning',
                         title: 'Warning',
@@ -683,9 +685,9 @@
                 }
 
             } else {
-                let wholesale_price = $(obj).parents('#form-wrapper').find('input[name="whole_sale_price[]"]').val()
+                let wholesale_price = $(parent_group).find('input[name="whole_sale_price[]"]').val()
                 if (wholesale_price >= $(obj).val()) {
-                    $(obj).val(wholesale_price + 0.1)
+                    $(obj).val(0)
                     Swal.fire({
                         icon: 'warning',
                         title: 'Warning',

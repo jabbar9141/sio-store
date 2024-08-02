@@ -48,6 +48,32 @@ Route::get('/make-model', function () {
     return "Model and migration created successfully";
 });
 
+Route::get('/product-script', function () {
+    $all_products = ProductModel::get();
+    foreach ($all_products as $key => $product) {
+        $total_quantity = 0;
+        $total_wholesale = 0;
+        $total_price = 0;
+        foreach ($product->variations as $key => $variation) {
+            $total_quantity += $variation->product_quantity ?? 0;
+            $total_price += $variation->price * $variation->product_quantity ?? 0;
+            $total_wholesale += $variation->whole_sale_price * $variation->product_quantity ?? 0;
+        }
+
+        $product->update([
+            'total_variation_quantity' => $total_quantity,
+            'total_variation_whole_sale_price' => $total_wholesale,
+            'total_variation_price' => $total_price,
+        ]);
+    }
+});
+
+Route::get('/add-product-columns', function () {
+    Artisan::call('migrate', [
+        '--path' => 'database/migrations/2024_08_02_152948_add_columns_in_product_table.php'
+    ]);
+});
+
 Route::get('/null-variations', function () {
     // Generate the model and migration
     $null_product_ids = ProductVariation::whereNull('whole_sale_price')->pluck('product_id')->toArray();

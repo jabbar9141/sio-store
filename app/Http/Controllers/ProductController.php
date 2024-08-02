@@ -102,8 +102,6 @@ class ProductController extends Controller
             $data['product_price'] = 0;
             $data['wholesale_price'] = 0;
 
-
-
             $data['product_colors'] = json_encode([]);
 
             $data['available_regions'] = json_encode($data['available_regions']);
@@ -185,7 +183,23 @@ class ProductController extends Controller
                 }
 
                 $users = User::where('status', true)->get();
+
+                $total_quantity = 0;
+                $total_wholesale = 0;
+                $total_price = 0;
+
                 $product = ProductModel::find($insertedProductId);
+                foreach ($product->variations as $key => $variation) {
+                    $total_quantity += $variation->product_quantity ?? 0;
+                    $total_price += $variation->price * $variation->product_quantity ?? 0;
+                    $total_wholesale += $variation->whole_sale_price * $variation->product_quantity ?? 0;
+                }
+
+                $product->update([
+                    'total_variation_quantity' => $total_quantity,
+                    'total_variation_whole_sale_price' => $total_wholesale,
+                    'total_variation_price' => $total_price,
+                ]);
                 $products = ProductModel::where('vendor_id', $this->getVendorId())
                     ->orderBy('product_id', 'desc')
                     ->limit(12)
@@ -950,7 +964,9 @@ class ProductController extends Controller
 
     public function showProduct(Request $request, $slug)
     {
-        $product = ProductModel::where('product_slug', $slug)->first();
+        $product = ProductModel::where('product_slug', $slug)->where('admin_approved', true)->where('product_status', true)->whereHas('variations', function ($q) {
+            $q->where('product_quantity', '>', 0);
+        })->first();
         if ($product) {
             $r = Location::find(1);
             if (session('ship_to') == null) {
@@ -986,7 +1002,9 @@ class ProductController extends Controller
             } else {
                 $shipping_cost = null;
             }
-            $similar = ProductModel::where('product_status', 1)->where('admin_approved', 1)->where('product_quantity', '>', 0)
+            $similar = ProductModel::where('admin_approved', true)->where('product_status', true)->whereHas('variations', function ($q) {
+                $q->where('product_quantity', '>', 0);
+            })
                 ->where(function ($query) use ($product) {
                     $query->where('product_name', 'like', '%' . $product->product_name . '%')
                         ->orWhere('product_short_description', 'like', '%' . $product->product_short_description . '%')
@@ -1018,9 +1036,9 @@ class ProductController extends Controller
 
     public function searchProducts(Request $request)
     {
-
-
-        $query = ProductModel::query();
+        $query = ProductModel::query()->where('admin_approved', true)->where('product_status', true)->whereHas('variations', function ($q) {
+            $q->where('product_quantity', '>', 0);
+        });
 
         // Search by product name, short description, and long description
         if ($request->filled('keyword')) {
@@ -1311,7 +1329,12 @@ class ProductController extends Controller
                         'price' => MyHelpers::toEuro(Auth::user()?->currency_id, (float) $price),
                         'product_quantity' =>  $stock ?? 0,
                         'whole_sale_price' => MyHelpers::toEuro(Auth::user()?->currency_id, (float) $wholesalePrice),
+                    ]);
 
+                    ProductModel::where('product_id', $insertedProductId)->update([
+                        'total_variation_quantity' => (int)$stock,
+                        'total_variation_whole_sale_price' => (int)$stock * (float)$wholesalePrice,
+                        'total_variation_price' => (int)$stock * (float)$price,
                     ]);
                 } else {
                     Log::error('Failed to add product: ' . $title);
