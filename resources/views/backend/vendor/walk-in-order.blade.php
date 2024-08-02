@@ -215,7 +215,7 @@
                                 <div class="d-flex justify-content-between">
                                     <button type="button" id="submit_btn" class="btn btn-primary"> <span
                                             class="fa fa-save"></span> Submit</button>
-                                    <button type="button" onclick="resetForm()" class="btn btn-danger"><span
+                                    <button type="button" onclick="clearInvoiceAndSlip()" class="btn btn-danger"><span
                                             class="fa fa-times"></span> Clear</button>
                                 </div>
                             </div>
@@ -429,9 +429,10 @@
 
 
         // Serialize form and submit via AJAX
+        let first_save = true;
         $('#submit_btn').on('click', function() {
             calculateTotals();
-            if (document.getElementById('pos_form')[0].checkValidity()) {
+            if (document.getElementById('pos_form')[0].checkValidity() && first_save) {
                 let formData = $('#pos_form').serialize();
                 $.ajax({
                     url: "{{ route('walk-in-order.store') }}",
@@ -442,6 +443,8 @@
                         // console.log(response);
                         // alert('Form submitted successfully!');
                         if (response.success) {
+                            first_save = false;
+                            $('#submit_btn').attr('disabled', true);
                             generateReciept('reciept_div', response);
                             generateReciept2('reciept_div2', response);
                             generateMainReciept(response);
@@ -574,13 +577,13 @@
 
                     <tbody>
                         ${order.order.items.map(item => `
-                                                                                                                                            <tr>
-                                                                                                                                                <td>${item.product.product_name}</td>
-                                                                                                                                                <td>${item.product.product_code}</td>
-                                                                                                                                                <td>${item.qty}</td>
-                                                                                                                                                <td>&euro; ${item.price.toFixed(2)}</td>
-                                                                                                                                            </tr>
-                                                                                                                                        `).join('')}
+                                                                                                                                                    <tr>
+                                                                                                                                                        <td>${item.product.product_name}</td>
+                                                                                                                                                        <td>${item.product.product_code}</td>
+                                                                                                                                                        <td>${item.qty}</td>
+                                                                                                                                                        <td>&euro; ${item.price.toFixed(2)}</td>
+                                                                                                                                                    </tr>
+                                                                                                                                                `).join('')}
                     </tbody>
                 </table>
                 <p><strong>Total Paid:</strong> &euro; ${order.order.total_paid.toFixed(2)}</p>
@@ -636,12 +639,12 @@
                 <td style="width: 20%;margin-left: 5px;">Amount</td>
             </tr>
                 ${response.order.items.map((item, index) => `<tr class="item" style="border-bottom: 1px solid #eee;">
-                                                                                                                            <td>${ index + 1 }</td>
-                                                                                                                            <td>${item.product.product_name}</td>
-                                                                                                                            <td>${item.product.product_code}</td>
-                                                                                                                            <td>${item.qty}</td>
-                                                                                                                            <td>${item.price.toFixed(2)} €</td>
-                                                                                                                        </tr>`).join('')}
+                                                                                                                                    <td>${ index + 1 }</td>
+                                                                                                                                    <td>${item.product.product_name}</td>
+                                                                                                                                    <td>${item.product.product_code}</td>
+                                                                                                                                    <td>${item.qty}</td>
+                                                                                                                                    <td>${item.price.toFixed(2)} €</td>
+                                                                                                                                </tr>`).join('')}
 
         </table>
         <table style="width: 100%; margin-top: 50px;">
@@ -662,11 +665,11 @@
                 <td colspan="2">CALCULATION</td>
             </tr>
             ${response.order.items.map(item => `
-                                                                                                                         <tr class="item" style="border-bottom: 1px solid #eee;">
-                                                                                                                            <td colspan="5">Amount of products or services</td>
-                                                                                                                            <td colspan="2">${item.price.toFixed(2)} €</td>
-                                                                                                                        </tr>
-                                                                                                                        `).join('')}
+                                                                                                                                 <tr class="item" style="border-bottom: 1px solid #eee;">
+                                                                                                                                    <td colspan="5">Amount of products or services</td>
+                                                                                                                                    <td colspan="2">${item.price.toFixed(2)} €</td>
+                                                                                                                                </tr>
+                                                                                                                                `).join('')}
 
             <tr class="total" style="border-top: 2px solid #eee; font-weight: bold;">
                 <td colspan="5">Net payable</td>
@@ -697,15 +700,15 @@
                 <div style="width: 100%; margin-bottom: 20px;">
                     <table style="width: 100%; border-collapse: collapse;">
                         ${order.order.items.map(item => `
-                                                                                                                                    <tr>
-                                                                                                                                        <td style="padding: 5px;">${item.product.product_name}</td>
-                                                                                                                                    </tr>
-                                                                                                                                    <tr>
-                                                                                                                                        <td style="padding: 5px;">${item.qty} x ${item.price.toFixed(2)}</td>
-                                                                                                                                        <td style="padding: 5px; text-align: right;">${(item.qty * item.price).toFixed(2)}</td>
-                                                                                                                                    </tr>
-                                                                                                                                    ${total += item.qty * item.price}
-                                                                                                                                `).join('')}
+                                                                                                                                            <tr>
+                                                                                                                                                <td style="padding: 5px;">${item.product.product_name}</td>
+                                                                                                                                            </tr>
+                                                                                                                                            <tr>
+                                                                                                                                                <td style="padding: 5px;">${item.qty} x ${item.price.toFixed(2)}</td>
+                                                                                                                                                <td style="padding: 5px; text-align: right;">${(item.qty * item.price).toFixed(2)}</td>
+                                                                                                                                            </tr>
+                                                                                                                                            ${total += item.qty * item.price}
+                                                                                                                                        `).join('')}
                     </table>
                 </div>
                 <div style="width: 100%; margin-bottom: 20px;">
