@@ -978,7 +978,8 @@ class ProductController extends Controller
 
                 // dd($shipping_data);
 
-                $shipping_cost = self::estimate_shipping($shipping_data);
+                // $shipping_cost = self::estimate_shipping($shipping_data);
+                $shipping_cost = null;
                 if (!$shipping_cost) {
                     $shipping_cost = null;
                 }

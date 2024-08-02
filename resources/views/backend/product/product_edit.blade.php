@@ -109,13 +109,17 @@
                                             <div class="col-md-3 mt-2">
                                                 <label for="dimention">Price<span class="text-danger">*</span></label>
                                                 <input class="form-control" type="number" name="prices[]"
-                                                    id="" value="{{ MyHelpers::fromEuro(Auth::user()->currency_id,$variation->price) }}" required step="0.001">
+                                                    onfocusout="checkPrice(this)" id=""
+                                                    value="{{ MyHelpers::fromEuro(Auth::user()->currency_id, $variation->price) }}"
+                                                    required step="0.001">
                                             </div>
                                             <div class="col-md-3 mt-2">
                                                 <label for="price">Whole Sale Price<span
                                                         class="text-danger">*</span></label>
                                                 <input class="form-control" type="number" name="whole_sale_price[]"
-                                                    id="" required value="{{  MyHelpers::fromEuro(Auth::user()->currency_id,$variation->whole_sale_price) }}" step="0.001">
+                                                    onfocusout="checkPrice(this)" id="" required
+                                                    value="{{ MyHelpers::fromEuro(Auth::user()->currency_id, $variation->whole_sale_price) }}"
+                                                    step="0.001">
                                             </div>
                                             <div class=" mt-2 col-md-3">
                                                 <label for="inputProductQuantity" class="form-label">Quantity</label>
@@ -129,14 +133,14 @@
                                             <div class="col-md-3 mt-2">
                                                 <label class="form-label">Upload Video</label>
                                                 <input name="product_video[]" class="form-control video-input"
-                                                    type="file" accept="video/*" >
+                                                    type="file" accept="video/*">
                                                 <small style="color: #e20000" class="error"
                                                     id="product_video-error"></small>
                                                 <div class="row video-preview" style="padding: 20px">
                                                     @php
                                                         $videos = json_decode($variation->video_url);
                                                     @endphp
-                                                   @if (isset($videos) && count($videos) > 0)
+                                                    @if (isset($videos) && count($videos) > 0)
                                                         @foreach ($videos as $video)
                                                             <video class="mt-2 ms-2"
                                                                 src="{{ url('uploads/images/product/' . $video) }}"
@@ -144,17 +148,17 @@
                                                         @endforeach
                                                     @endif
                                                 </div>
-                                               
+
                                             </div>
                                             <div class="col-md-4 mt-2">
                                                 <label for="dimention">Image<span class="text-danger">*</span></label>
-                                                <input class="form-control image-input" type="file" name="files[]" id=""
-                                                    value="" multiple>
+                                                <input class="form-control image-input" type="file" name="files[]"
+                                                    id="" value="" multiple>
                                                 <div class="row image-preview" style="padding: 20px">
                                                     @php
                                                         $images = json_decode($variation->image_url);
                                                     @endphp
-                                                  @if (isset($images) && count($images) > 0)
+                                                    @if (isset($images) && count($images) > 0)
                                                         @foreach ($images as $image)
                                                             <img class="mt-2 ms-2"
                                                                 src="{{ url('uploads/images/product/' . $image) }}"
@@ -501,11 +505,11 @@
                                     <input name="product_video" class="form-control" type="file" id="product_video"
                                     accept="video/*" >
                                     <div class="row" id="preview_video" style="padding: 20px">
-                                      
+
                                             <video class="thumb"
                                                 src="{{ url('uploads/images/product/' . $data->video_link) }}"
                                                 style="max-width: 200px; margin-top: 20px" alt="product image"  controls></video>
-                                      
+
                                     </div>
                                     <small style="color: #e20000" class="error" id="product_video-error"></small>
                                 </div> --}}
@@ -610,10 +614,11 @@
                                     </div>
 
                                     <div class="col-12">
-                                         <button type="submit" class="btn btn-primary">
-        <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
-        Save Product
-    </button>
+                                        <button type="submit" class="btn btn-primary">
+                                            <span class="spinner-border spinner-border-sm d-none" role="status"
+                                                aria-hidden="true"></span>
+                                            Save Product
+                                        </button>
                                     </div>
                                 </div>
                             </div>
@@ -636,6 +641,52 @@
         integrity="sha256-o88AwQnZB+VDvE9tvIXrMQaPlFFSUTR+nldQm1LuPXQ=" crossorigin="anonymous"></script>
 
     <script>
+        function checkPrice(obj) {
+            let input_name = $(obj).attr('name');
+
+            if ($(obj).val() < 1) {
+                $(obj).val(1);
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Warning',
+                    text: 'Price must be greater than 1',
+                    showDenyButton: false,
+                    showCancelButton: false,
+                    confirmButtonText: 'OK'
+                });
+                return false;
+            }
+
+            if (input_name == 'whole_sale_price[]') {
+                let price = $(obj).parents('#form-wrapper').find('input[name="prices[]"]').val();
+                if (price <= $(obj).val()) {
+                    $(obj).val(parseFloat(price) - 0.1)
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Warning',
+                        text: 'Price must be greater than whole sale price',
+                        showDenyButton: false,
+                        showCancelButton: false,
+                        confirmButtonText: 'OK'
+                    });
+                }
+
+            } else {
+                let wholesale_price = $(obj).parents('#form-wrapper').find('input[name="whole_sale_price[]"]').val()
+                if (wholesale_price >= $(obj).val()) {
+                    $(obj).val(parseFloat(wholesale_price) + 0.1)
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Warning',
+                        text: 'Price must be greater than whole sale price',
+                        showDenyButton: false,
+                        showCancelButton: false,
+                        confirmButtonText: 'OK'
+                    });
+                }
+            }
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
             var formWrapper = document.getElementById('form-wrapper');
             var addButton = document.getElementById('add-btn');
@@ -758,7 +809,6 @@
                 });
             }
         });
-
     </script>
 
     <script type="text/javascript">
@@ -806,11 +856,11 @@
             $('#product_form').on('submit', function(event) {
                 event.preventDefault();
                 var $submitButton = $('button[type="submit"]');
-    var $spinner = $submitButton.find('.spinner-border');
+                var $spinner = $submitButton.find('.spinner-border');
 
-    // Show spinner and disable button
-    $spinner.removeClass('d-none');
-    $submitButton.prop('disabled', true);
+                // Show spinner and disable button
+                $spinner.removeClass('d-none');
+                $submitButton.prop('disabled', true);
                 // Remove errors if the conditions are true
                 $('#product_form *').filter(':input.is-invalid').each(function() {
                     this.classList.remove('is-invalid');
@@ -884,10 +934,10 @@
                         $('#product_form *').filter('.error').each(function() {
                             this.innerHTML = '';
                         });
-                        
-                         // Hide spinner and re-enable button
-            $spinner.addClass('d-none');
-            $submitButton.prop('disabled', false);
+
+                        // Hide spinner and re-enable button
+                        $spinner.addClass('d-none');
+                        $submitButton.prop('disabled', false);
                         Swal.fire({
                             icon: 'success',
                             title: response.msg,
@@ -904,10 +954,10 @@
                             $('#' + key + '-error').text(err[0]);
                             $('#' + key).addClass('is-invalid');
                         });
-                        
-                         // Hide spinner and re-enable button
-            $spinner.addClass('d-none');
-            $submitButton.prop('disabled', false);
+
+                        // Hide spinner and re-enable button
+                        $spinner.addClass('d-none');
+                        $submitButton.prop('disabled', false);
                     }
                 });
             });

@@ -111,6 +111,7 @@ class WalkInOrderController extends Controller
             ->whereHas('variations', function ($query) {
                 $query->where('product_quantity', '>', 0)->where('whole_sale_price', '>', 0);
             })
+            ->where('admin_approved', true)
             ->orderBy('product_name', 'ASC')->paginate(20);
 
 
