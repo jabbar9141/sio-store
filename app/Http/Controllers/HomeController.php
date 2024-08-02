@@ -112,7 +112,6 @@ class HomeController extends Controller
                     $query->where('vendor_id', Auth::user()->vendor_shop->vendor_id);
                 })->limit(10)->get();
 
-
                 $users_total = ShopOrder::whereHas('items', function ($query) {
                     $query->whereHas('item', function ($query) {
                         $query->where('vendor_id', Auth::user()->vendor_shop->vendor_id);
@@ -127,7 +126,7 @@ class HomeController extends Controller
 
                 $total_revenue = ShopOrderItem::whereHas('item', function ($query) {
                     $query->where('vendor_id', Auth::user()->vendor_shop->vendor_id);
-                })->sum('price');
+                })->sum('total_price');
 
                 $total_shop_revenue = $total_revenue;
 
@@ -219,7 +218,9 @@ class HomeController extends Controller
 
                 $total_revenue = ShopOrderItem::whereHas('order', function ($query) {
                     $query->where('user_id', Auth::id());
-                })->sum('price');
+                })->sum('total_price');
+
+                $total_revenue += ShopOrder::where('user_id', Auth::id())->sum('shipping_cost');
 
                 $latest_reviews = ProductReview::where('user_id', Auth::id())->orderBy('created_at')->paginate(2);
 
@@ -404,8 +405,7 @@ class HomeController extends Controller
         $touch->message = $request->message;
         $touch->type = 'contant_with_vendor';
         $touch->save();
-        // Mail::to($user->email)->send(new ContactWithVendorMail($touch));
-        Mail::to('ab.jabbar9141@gmail.com')->send(new ContactWithVendorMail($touch));
+        Mail::to($user->email)->send(new ContactWithVendorMail($touch));
 
         return response()->json([
             'success' => true,

@@ -148,10 +148,13 @@ class CategoryController extends Controller
     }
 
     public function showCategory(Request $request, $slug)
-    {   
+    {
         $cat = CategoryModel::where('category_slug', $slug)->first();
         if ($cat) {
-            $products = ProductModel::with(['category', 'brand'])->where('product_status', 1)->where('admin_approved', 1)->where('category_id', $cat->category_id)->paginate(12);
+            $products = ProductModel::with(['category', 'brand'])->whereHas('variations', function ($q) {
+                $q->where('product_quantity', '>', 0);
+            })
+                ->where('product_status', 1)->where('admin_approved', 1)->where('category_id', $cat->category_id)->paginate(12);
             // dd(  $products);
             return view('user.category', ['category' => $cat, 'products' => $products]);
         } else {

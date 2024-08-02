@@ -112,8 +112,8 @@ class ShopOrderController extends Controller
                 'success' => $shipping_cost > 0 ? true : false,
                 'shipping_cost' => $shipping_cost,
                 'shipping_plus_total' => $shipping_plus_total,
-                'euro_shipping_cost' => number_format($euro_shipping_cost, 2),
-                'euro_shipping_plus_total' => number_format($euro_shipping_plus_total, 2),
+                'euro_shipping_cost' => $euro_shipping_cost,
+                'euro_shipping_plus_total' => $euro_shipping_plus_total,
                 'message' => $shipping_cost > 0 ? 'Success' : 'Error Calculating Shipping Cost',
             ]);
 
@@ -409,7 +409,7 @@ class ShopOrderController extends Controller
             //     $cost = ($cost + $order->shipping_cost);
             // }
             else {
-                DB::rollBack();
+                // DB::rollBack();
                 return back()->with(['error' => "Failed to initiate payment, please try again later"]);
             }
         } catch (Exception $e) {
@@ -536,44 +536,64 @@ class ShopOrderController extends Controller
         $origin_vendor = Auth::user();
         $origin_vendor_shop = Auth::user()->vendor_shop;
 
-        $response = Http::withHeaders(['Accept' => 'application/json'])->post(env('SHIPPING_POST_API_URL'), [
-            'width' => $product->width,
-            'height' => $product->height,
-            'weight' => $product->weight,
-            'length' => $product->length,
-            'count' => $item->qty,
-            'item_desc' => $product->product_name,
-            'item_value' => $product->product_price,
-            'origin_country' => $origin->country_code,
-            'origin_zip' => $origin->zip,
-            'origin_city' => $origin->name,
-            'origin_name' => $origin_vendor->name . '(' . $origin_vendor_shop->shop_name . ')',
-            'origin_address' => $origin_vendor->address,
-            'origin_email' => $origin_vendor->email,
-            'pickup_date' => $request->pickup_date,
-            'dest_city' => $dest_address->city,
-            'dest_zip' => $dest_address->zip,
-            'dest_email' => $dest_address->email,
-            'dest_phone' => $dest_address->phone,
-            'dest_address' => $dest_address->address1,
-            'dest_address2' => $dest_address->address2,
-            'dest_name' => $dest_address->firstname . ' ' . $dest_address->lastname,
-            'dest_country' => $dest_address->country,
-            'dest_state' => $dest_address->state,
-            'ref' => $item->order->order_id . '_' . $item->id,
-        ]);
+        $country_iso = $request->country_iso_2;
+        $weights = $item->variation->weight ?? [];
 
-        if ($response->successful()) {
-            $body = $response->json();
-            $item->tracking_id = $body['data']['tracking_id'];
+        $euro_shipping_cost = ShippingCost::where('country_iso_2', $dest_address->country)->whereIn('weight', [$weights])->sum('cost') ?? 0;
+        $euro_shipping_plus_total = $request->euro_cart_total + $euro_shipping_cost;
+        $euro_cart_total = MyHelpers::fromEuroView(session('currency_id', 0), $request->euro_cart_total);
+
+        $shipping_cost = MyHelpers::fromEuroView(session('currency_id', 0), $euro_shipping_cost);
+        $shipping_plus_total = MyHelpers::fromEuroView(session('currency_id', 0), $euro_shipping_plus_total);
+
+
+        // return response()->json([
+        //     'success' => $shipping_cost > 0 ? true : false,
+        //     'shipping_cost' => $shipping_cost,
+        //     'shipping_plus_total' => $shipping_plus_total,
+        //     'euro_shipping_cost' => $euro_shipping_cost,
+        //     'euro_shipping_plus_total' => $euro_shipping_plus_total,
+        //     'message' => $shipping_cost > 0 ? 'Success' : 'Error Calculating Shipping Cost',
+        // ]);
+
+        // $response = Http::withHeaders(['Accept' => 'application/json'])->post(env('SHIPPING_POST_API_URL'), [
+        //     'width' => $product->width,
+        //     'height' => $product->height,
+        //     'weight' => $product->weight,
+        //     'length' => $product->length,
+        //     'count' => $item->qty,
+        //     'item_desc' => $product->product_name,
+        //     'item_value' => $product->product_price,
+        //     'origin_country' => $origin->country_code,
+        //     'origin_zip' => $origin->zip,
+        //     'origin_city' => $origin->name,
+        //     'origin_name' => $origin_vendor->name . '(' . $origin_vendor_shop->shop_name . ')',
+        //     'origin_address' => $origin_vendor->address,
+        //     'origin_email' => $origin_vendor->email,
+        //     'pickup_date' => $request->pickup_date,
+        //     'dest_city' => $dest_address->city,
+        //     'dest_zip' => $dest_address->zip,
+        //     'dest_email' => $dest_address->email,
+        //     'dest_phone' => $dest_address->phone,
+        //     'dest_address' => $dest_address->address1,
+        //     'dest_address2' => $dest_address->address2,
+        //     'dest_name' => $dest_address->firstname . ' ' . $dest_address->lastname,
+        //     'dest_country' => $dest_address->country,
+        //     'dest_state' => $dest_address->state,
+        //     'ref' => $item->order->order_id . '_' . $item->id,
+        // ]);
+
+        // if ($response->successful()) {
+        //     $body = $response->json();
+            $item->tracking_id = rand(500000, 50000000);
             $item->status = 'Shipped';
             $item->save();
 
-            return back()->with(['success' => $body['message']]);
-        } else {
-            Log::error($response->json()['message'], [$response->json()]);
-            return back()->with(['error' => $response->json()['message']]);
-        }
+            return back()->with(['success' => 'Success']);
+        // } else {
+        //     Log::error($response->json()['message'], [$response->json()]);
+        //     return back()->with(['error' => $response->json()['message']]);
+        // }
     }
 
     public function createPayment($price, $order_id)

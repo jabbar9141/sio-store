@@ -195,11 +195,6 @@
 
 
 
-
-
-
-
-
     <!-- Breadcrumb Start -->
 
     <div class="container-fluid px-0">
@@ -471,7 +466,7 @@
 
                                 $all_variations = $product?->variations;
 
-                                @endphp
+                            @endphp
 
                             @if ($shipping_cost)
 
@@ -551,87 +546,8 @@
                                     @endforeach
                                 </select>
                             </div>
-                            {{-- @if ($product->product_colors)
 
-                                @php
-
-                                    $variations = json_decode($product->product_colors);
-
-                                    $l = 0;
-
-                                @endphp
-
-                                @foreach ($variations as $variation)
-                                    <div>
-
-                                        <strong class="text-dark mr-3">{{ $variation->variation_name }}:</strong>
-
-                                        @php
-
-                                            $l = 0;
-
-                                        @endphp
-
-                                        @foreach (explode(',', $variation->variation_values) as $value)
-                                            <div class="custom-control custom-radio custom-control-inline">
-
-                                                <input type="radio" class="custom-control-input" id="{{ $value }}"
-                                                    name="variations[{{ $variation->variation_name }}]"
-                                                    value="{{ $value }}" {{ $l == 0 ? 'checked' : '' }}>
-
-                                                <label class="custom-control-label"
-                                                    for="{{ $value }}">{{ $value }}</label>
-
-                                            </div>
-
-                                            @php
-
-                                                $l++;
-
-                                            @endphp
-                                        @endforeach
-
-
-
-                                    </div>
-
-                                    <br>
-                                @endforeach
-
-                            @endif --}}
                         </div>
-                        {{-- <p class="text-bold">Dimentions</p> --}}
-
-                        {{-- <div class="row mb-4">
-                            <div class="col-md-2">
-                                <label for="">Height</label>
-                                <input class="form-control" id="height" class="variation" type="number">
-                            </div>
-                            <div class="col-md-2">
-                                <label for="">Width</label>
-                                <input class="form-control" id="width" class="variation" type="number">
-                            </div>
-                            <div class="col-md-2">
-                                <label for="">Length</label>
-                                <input class="form-control" id="length" class="variation" type="number">
-                            </div>
-                        </div>
-                        <div class="row mb-4">
-
-                            <div class="col-md-2">
-                                <label for="">Weight</label>
-                                <input class="form-control" id="weight" class="variation" type="number">
-                            </div>
-
-                            <div class="col-md-2">
-                                <label for="">Color</label>
-                                <input class="form-control" id="colorID" class="variation" type="text">
-                            </div>
-                            <div class="col-md-2">
-                                <label for="">Size</label>
-                                <input class="form-control" id="sizeID" class="variation" type="text">
-                            </div>
-                        </div> --}}
 
                         <div class="d-flex align-items-center disflexx mb-4 pt-2">
 
@@ -650,7 +566,7 @@
                                 <input type="text" class="form-control bg-secondary border-0 text-center"
                                     value="1" min="10" max="20" name="qty" readonly>
 
-                                    <div class="input-group-btn">
+                                <div class="input-group-btn">
                                     <button class="btn btn-primary btn-plus" type="button">
 
                                         <i class="fa fa-plus"></i>
@@ -1030,31 +946,19 @@
                                 <a href="{{ route('store.showProduct', $s->product_slug) }}" class="d-block h-100">
 
                                     <div class="related-img position-relative overflow-hidden">
-                                        @if ($firstVariation && $variationImages && count($variationImages) > 0)
+                                        {{-- @if ($firstVariation && $variationImages && count($variationImages) > 0)
                                             <img id="" class="img-fluid w-100 img-thumbnail h-100"
                                                 src="/uploads/images/product/{{ $variationImages[0] }}"
-                                                alt="{{ $product->product_name }}">
-                                        @elseif($product->images->first())
+                                                alt="{{ $s->product_name }}">
+                                        @elseif($s->images->first())
                                             <img id="" class="img-fluid w-100 img-thumbnail h-100"
-                                                src="/uploads/images/product/{{ $product->images->first()->product_image }}"
-                                                alt="{{ $product->product_name }}">
-                                        @else
-                                            <img id="" class="img-fluid w-100 img-thumbnail h-100"
-                                                src="/uploads/images/product/{{ $product->product_thumbnail }}"
-                                                alt="{{ $product->product_name }}">
-                                        @endif
-
-                                        <!--@if ($s->images && count($s->images) > 0)
-    -->
-                                        <!--    <img class="img-fluid w-100 img-thumbnail h-100"-->
-                                        <!--        src="/uploads/images/product/{{ $s->images[0]->product_image }}"-->
-                                        <!--        alt="{{ $s->product_name }}">-->
-                                    <!--@else-->
-                                        <!--    <img class="img-fluid w-100 img-thumbnail h-100"-->
-                                        <!--        src="{{ asset('uploads/images/product/bf51bb3bd5965bed168991794f01eafc.png') }}"-->
-                                        <!--        alt="no image">-->
-                                        <!--
-    @endif-->
+                                                src="/uploads/images/product/{{ $s->images->first()->product_image }}"
+                                                alt="{{ $s->product_name }}">
+                                        @else --}}
+                                        <img id="" class="img-fluid w-100 img-thumbnail h-100"
+                                            src="/uploads/images/product/{{ $s->product_thumbnail }}"
+                                            alt="{{ $s->product_name }}">
+                                        {{-- @endif --}}
 
                                         <div class="product-action">
 

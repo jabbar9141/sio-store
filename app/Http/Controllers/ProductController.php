@@ -1002,7 +1002,7 @@ class ProductController extends Controller
             } else {
                 $shipping_cost = null;
             }
-            $similar = ProductModel::where('admin_approved', true)->where('product_status', true)->whereHas('variations', function ($q) {
+            $similar = ProductModel::where('admin_approved', true)->where('product_status', true)->withWhereHas('variations', function ($q) {
                 $q->where('product_quantity', '>', 0);
             })
                 ->where(function ($query) use ($product) {

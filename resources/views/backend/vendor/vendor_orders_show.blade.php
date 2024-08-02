@@ -77,7 +77,7 @@
                                 </tr>
                                 <tr>
                                     <td>Variant</td>
-                                    <td>{{ $item->variant }}</td>
+                                    <td>{{ $item->variation->color_name ?? '' }}</td>
                                 </tr>
                                 <tr>
                                     <td>Quantity Ordered</td>
@@ -85,7 +85,7 @@
                                 </tr>
                                 <tr>
                                     <td>Quantity Currently In stock</td>
-                                    <td>{{ $item->item->product_quantity }}</td>
+                                    <td>{{ $item->variation->product_quantity }}</td>
                                 </tr>
                                 <tr>
                                     <th colspan="2">Customer Data</td>

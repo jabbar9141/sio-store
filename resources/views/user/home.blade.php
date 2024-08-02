@@ -239,13 +239,13 @@
                                 <h2 class="px-3">{{ $category->category_name }}</h2>
                                 <div class="product-grid px-3">
                                     <?php
-                                 $products = ProductModel::whereHas('variations', function ($query) {
-                                    $query->where('product_quantity', '>', 0);
-                                })->where('category_id', $category->category_id)->where('admin_approved', 1)->where('product_status', 1)->orderBy('product_id', 'DESC')->limit(4)->get();
-                                if ($products->count() > 0) {
-                                    foreach ($products as $product) {
-                                        // dd($product);
-                                ?>
+                                        $products = ProductModel::whereHas('variations', function ($query) {
+                                            $query->where('product_quantity', '>', 0);
+                                        })->where('category_id', $category->category_id)->where('admin_approved', 1)->where('product_status', 1)->orderBy('product_id', 'DESC')->limit(4)->get();
+                                        if ($products->count() > 0) {
+                                            foreach ($products as $product) {
+                                                // dd($product);
+                                        ?>
                                     <a href="{{ route('store.showProduct', $product->product_slug) }}"
                                         class="product-card">
                                         <div class="category-img">
@@ -299,10 +299,10 @@
                                     </a>
                                     <?php
 
-                         }
-                       ?>
+                            }
+                        ?>
 
-                                    <a href="{{ route('store.showCategory', $category->category_slug) }}""
+                                    <a href="{{ route('store.showCategory', $category->category_slug) }}"
                                         class="more-btn d-block px-3 mt-2">Show more</a>
                                 </div>
                             </div>
@@ -310,102 +310,6 @@
                     @endforeach
                 @endif
 
-                {{-- <div class="col-md-3 d-none">
-                    <div class="product-cards pb-3">
-                        <h2 class="px-3">Appliances for your home | Up to 55% off</h2>
-                        <div class="product-grid px-3">
-                            <a href="#" class="product-card">
-                                <div class="product-img">
-                                    <img src="{{ asset('user_assets/img/product1.jpg') }}" alt="" class="h-100">
-        </div>
-        <span>Air conditioners</span>
-        </a>
-        <a href="#" class="product-card">
-            <div class="product-img">
-                <img src="{{ asset('user_assets/img/product2.jpg') }}" alt="" class="h-100">
-            </div>
-            <span>Air conditioners</span>
-        </a>
-        <a href="#" class="product-card">
-            <div class="product-img">
-                <img src="{{ asset('user_assets/img/product3.jpg') }}" alt="" class="h-100">
-            </div>
-            <span>Air conditioners</span>
-        </a>
-        <a href="#" class="product-card">
-            <div class="product-img">
-                <img src="{{ asset('user_assets/img/Appliances-QC-PC-186x116--B08RDL6H79._SY116_CB667322346_.jpg') }}" alt="" class="h-100">
-            </div>
-            <span>Air conditioners</span>
-        </a>
-    </div>
-    <a href="#" class="more-btn d-block px-3 mt-3">Show more</a>
-    </div>
-    </div>
-    <div class="col-md-3 d-none">
-        <div class="product-cards pb-3">
-            <h2 class="px-3">Appliances for your home | Up to 55% off</h2>
-            <div class="product-grid px-3">
-                <a href="#" class="product-card">
-                    <div class="product-img">
-                        <img src="{{ asset('user_assets/img/product1.jpg') }}" alt="" class="h-100">
-                    </div>
-                    <span>Air conditioners</span>
-                </a>
-                <a href="#" class="product-card">
-                    <div class="product-img">
-                        <img src="{{ asset('user_assets/img/product2.jpg') }}" alt="" class="h-100">
-                    </div>
-                    <span>Air conditioners</span>
-                </a>
-                <a href="#" class="product-card">
-                    <div class="product-img">
-                        <img src="{{ asset('user_assets/img/product3.jpg') }}" alt="" class="h-100">
-                    </div>
-                    <span>Air conditioners</span>
-                </a>
-                <a href="#" class="product-card">
-                    <div class="product-img">
-                        <img src="{{ asset('user_assets/img/Appliances-QC-PC-186x116--B08RDL6H79._SY116_CB667322346_.jpg') }}" alt="" class="h-100">
-                    </div>
-                    <span>Air conditioners</span>
-                </a>
-            </div>
-            <a href="#" class="more-btn d-block px-3 mt-3">Show more</a>
-        </div>
-    </div>
-    <div class="col-md-3 d-none">
-        <div class="product-cards pb-3">
-            <h2 class="px-3">Appliances for your home | Up to 55% off</h2>
-            <div class="product-grid px-3">
-                <a href="#" class="product-card">
-                    <div class="product-img">
-                        <img src="{{ asset('user_assets/img/product1.jpg') }}" alt="" class="h-100">
-                    </div>
-                    <span>Air conditioners</span>
-                </a>
-                <a href="#" class="product-card">
-                    <div class="product-img">
-                        <img src="{{ asset('user_assets/img/product2.jpg') }}" alt="" class="h-100">
-                    </div>
-                    <span>Air conditioners</span>
-                </a>
-                <a href="#" class="product-card">
-                    <div class="product-img">
-                        <img src="{{ asset('user_assets/img/product3.jpg') }}" alt="" class="h-100">
-                    </div>
-                    <span>Air conditioners</span>
-                </a>
-                <a href="#" class="product-card">
-                    <div class="product-img">
-                        <img src="{{ asset('user_assets/img/Appliances-QC-PC-186x116--B08RDL6H79._SY116_CB667322346_.jpg') }}" alt="" class="h-100">
-                    </div>
-                    <span>Air conditioners</span>
-                </a>
-            </div>
-            <a href="#" class="more-btn d-block px-3 mt-3">Show more</a>
-        </div>
-    </div> --}}
             </div>
         </div>
     </section>
@@ -449,73 +353,6 @@
         </div>
     </section>
     </div>
-    <!-- <div class="container-fluid mb-3">
-                                                <div class="row px-xl-5">
-                                                    <div class="col-lg-8">
-                                                        <div id="header-carousel" class="carousel slide carousel-fade mb-30 mb-lg-0" data-ride="carousel">
-                                                            <ol class="carousel-indicators">
-                                                                @if ($categories)
-                                                                @php
-                                                                    $t = 0;
-                                                                @endphp
-                                                                @foreach ($categories as $category)
-    <li data-target="#header-carousel" data-slide-to="{{ $t }}" class="{{ $t == 0 ? ' active' : '' }}"></li>
-                                                                @php
-                                                                    $t++;
-                                                                @endphp
-    @endforeach
-
-                                                                @endif
-                                                            </ol>
-                                                            <div class="carousel-inner">
-                                                                @if ($categories)
-                                                                @php
-                                                                    $t = 0;
-                                                                @endphp
-                                                                @foreach ($categories as $category)
-    <div class="carousel-item position-relative{{ $t == 0 ? ' active' : '' }}" style="height: 430px;">
-                                                                    <img class="position-absolute w-100 h-100" src="/uploads/images/category/{{ $category->category_image }}" style="object-fit: cover;">
-                                                                    <div class="carousel-caption d-flex flex-column align-items-center justify-content-center">
-                                                                        <div class="p-3" style="max-width: 700px;">
-                                                                            <h1 class="display-4 text-white mb-3 animate__animated animate__fadeInDown">
-                                                                                {{ $category->category_name }}
-                                                                            </h1>
-                                                                            {{-- <p class="mx-md-5 px-5 animate__animated animate__bounceIn">Lorem rebum magna amet lorem
-                                        magna erat diam stet. Sadips duo stet amet amet ndiam elitr ipsum diam</p> --}}
-                                                                            <a class="btn btn-outline-light py-2 px-4 mt-3 animate__animated animate__fadeInUp" href="{{ route('store.showCategory', $category->category_slug) }}">Shop
-                                                                                Now</a>
-                                                                        </div>
-                                                                    </div>
-                                                                </div>
-                                                                @php
-                                                                    $t++;
-                                                                @endphp
-    @endforeach
-                                                                @endif
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                    <div class="col-lg-4">
-                                                        <div class="product-offer mb-30" style="height: 200px;">
-                                                            <img class="img-fluid" src="user_assets/img/offer-1.jpg" alt="">
-                                                            <div class="offer-text">
-                                                                <h6 class="text-white text-uppercase">Save 20%</h6>
-                                                                <h3 class="text-white mb-3">Special Offer</h3>
-                                                                <a href="" class="btn bg-blue">Shop Now</a>
-                                                            </div>
-                                                        </div>
-                                                        <div class="product-offer mb-30" style="height: 200px;">
-                                                            <img class="img-fluid" src="user_assets/img/offer-2.jpg" alt="">
-                                                            <div class="offer-text">
-                                                                <h6 class="text-white text-uppercase">Save 20%</h6>
-                                                                <h3 class="text-white mb-3">Special Offer</h3>
-                                                                <a href="" class="btn bg-blue">Shop Now</a>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div> -->
-    <!-- Carousel End -->
 
     <section class="top-deals-container py-3 mb-4">
         <div class="container-fluid">
@@ -546,65 +383,6 @@
     </section>
 
 
-
-
-    <!-- Categories Start -->
-    <!-- <div class="container-fluid pt-5" style=" background: #4cc2fb;">
-                                                <div class="row">
-                                                    <div class="col-lg-2 col-md-2 col-12">
-                                                        <h2 class="section-title position-relative text-uppercase mx-xl-5 mb-4">
-                                                            <span class="text-white pr-3">Categories</span>
-                                                        </h2>
-                                                    </div>
-                                                    <div class="col-lg-10 col-md-10 col-12">
-                                                        <div class="row px-xl-5 pb-3 sliderwidth">
-                                                            @if ($categories)
-                                                            <div class="slider">
-                                                                @foreach ($categories as $category)
-    <div class="col-lg-3 col-md-4 col-sm-6 pb-1">
-                                                                    <a class="text-decoration-none" href="{{ route('store.showCategory', $category->category_slug) }}">
-                                                                        <div class="cat-item mb-4">
-                                                                            <div class="overflow-hidden" style=" height: 150px;">
-                                                                                <img class="img-fluid h-100 w-100" src="uploads/images/category/{{ $category->category_image }}" alt="">
-                                                                            </div>
-                                                                            <div class="flex-fill d-flex justify-content-center py-3">
-                                                                                <h6>{{ $category->category_name }}</h6>
-                                                                                <small class="text-body"></small>
-                                                                            </div>
-                                                                        </div>
-                                                                    </a>
-                                                                </div>
-    @endforeach
-                                                            </div>
-                                                            @endif
-                                                        </div>
-                                                    </div>
-                                                </div> -->
-
-    <!-- <div class="row px-xl-5 pb-3">
-                                                        @if ($categories)
-                                                            @foreach ($categories as $category)
-    <div class="col-lg-3 col-md-4 col-sm-6 pb-1">
-                                                                    <a class="text-decoration-none" href="{{ route('store.showCategory', $category->category_slug) }}">
-                                                                        <div class="cat-item d-flex align-items-center mb-4">
-                                                                            <div class="overflow-hidden" style="width: 100px; height: 100px;">
-                                                                                <img class="img-fluid" src="uploads/images/category/{{ $category->category_image }}"
-                                                                                    alt="">
-                                                                            </div>
-                                                                            <div class="flex-fill pl-3">
-                                                                                <h6>{{ $category->category_name }}</h6>
-                                                                                <small class="text-body"></small>
-                                                                            </div>
-                                                                        </div>
-                                                                    </a>
-                                                                </div>
-    @endforeach
-                                                        @endif
-                                                    </div> -->
-
-
-
-    <!-- </div> -->
     <!-- Categories End -->
 
     <!-- Featured Start -->
@@ -641,49 +419,6 @@
         </div>
     </div>
     <!-- Featured End -->
-
-
-
-    <!-- <section class="product-section mt-1">
-                                                <div class="container-fluid">
-                                                    <div class="row">
-                                                        <div class="col-md-3">
-                                                            <div class="product-cards pb-3">
-                                                                <h2 class="px-3">Featured Products test</h2>
-                                                                <div class="product-grid px-3">
-                                                                    @foreach ($featured as $item)
-    @foreach ($item->products as $i)
-    <a href="#" class="product-card">
-                                                                        <div class="product-img">
-                                                                            @if ($i->images && count($i->images) > 0)
-    <img class="img-fluid w-100 img-thumbnail" src="uploads/images/product/{{ $i->images[0]->product_image }}" alt="">
-@else
-    <img class="img-fluid w-100 img-thumbnail" style="height: 250px" alt="{{ $i->product_name }}">
-    @endif
-
-                                                                        </div>
-                                                                        <span>
-                                            @if (strlen($i->product_name) > 25)
-    {{ substr($i->product_name, 0, 20) . '  ...  ' }}
-@else
-    {{ $i->product_name }}
-    @endif
-                                            </span>
-                                                                        <h2>{{ session()->get('session_symbol') ?? '€' }} {{ App\MyHelpers::getPrice($i->product_price) }}</h2>
-                                                                    </a>
-    @endforeach
-    @endforeach
-                                                                </div>
-                                                                <a href="#" class="more-btn d-block px-3 mt-3">Show more</a>
-                                                            </div>
-                                                        </div>
-
-                                                    </div>
-                                                </div>
-                                            </section> -->
-
-
-    <!-- Products Start -->
 
 
     <div class="container-fluid pt-5 pb-3" style=" background: #4cc2fb;">
@@ -763,45 +498,6 @@
         </div>
 
 
-        <!-- @if ($featured)
-                                                <div class="container">
-                                                    <div class="row">
-                                                        @foreach ($featured as $item)
-    @foreach ($item->products as $i)
-    <div class="col-lg-3 w-full col-md-4 col-6 col-sm-4 pb-4">
-                                                            <div class="card rounded px-2 py-2 h-100 d-flex flex-column">
-                                                                <div class="product-img position-relative overflow-hidden">
-                                                                    @if ($i->images && count($i->images) > 0)
-    <img class="img-fluid w-100 img-thumbnail" src="uploads/images/product/{{ $i->images[0]->product_image }}" alt="">
-@else
-    <img class="img-fluid w-100 img-thumbnail" style="height: 250px" alt="{{ $i->product_name }}">
-    @endif
-
-                                                                    <div class="product-action">
-                                                                        <a class="btn btn-outline-dark btn-square" href="{{ route('store.showProduct', $i->product_slug) }}"><i class="fa fa-eye"></i></a>
-                                                                    </div>
-                                                                </div>
-                                                                <div class="py-4 px-3">
-                                                                    <a class="text-decoration-none text-blue-400" href="{{ route('store.showProduct', $i->product_slug) }}" data-toggle="tooltip" data-placement="top" title="{{ $i->product_name }}">
-                                                                        @if (strlen($i->product_name) > 25)
-    {{ substr($i->product_name, 0, 20) . '  ...  ' }}
-@else
-    {{ $i->product_name }}
-    @endif
-                                                                    </a>
-                                                                    <div class="d-flex align-items-center mt-2">
-                                                                        <h5>{{ session()->get('session_symbol') ?? '€' }} {{ App\MyHelpers::getPrice($i->product_price) }}</h5>
-                                                                        {{-- <h6 class="text-muted ml-2"><del>$123.00</del></h6> --}}
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-    @endforeach
-    @endforeach
-                                                    </div>
-                                                </div>
-                                                @endif -->
-
     </div>
     <!-- Products End -->
 
@@ -838,112 +534,6 @@
 
         </div>
     </section>
-
-
-
-
-    <!--<div class="container-fluid pt-5">-->
-    <!--    <h2 class="section-title position-relative text-uppercase mx-xl-5 mb-4"><span-->
-    <!--            class="bg-secondary pr-3">Brands</span></h2>-->
-    <!--    <div class="row px-xl-5 pb-3">-->
-    <!--        @if ($brands)-->
-    <!--            @foreach ($brands as $brand)
-    -->
-    <!--                <div class="col-lg-3 col-md-4 col-sm-6 pb-1 brands">-->
-    <!--                    <a class="text-decoration-none" href="{{ route('store.showBrand', $brand->brand_slug) }}">-->
-    <!--                        <div class="cat-item d-flex align-items-center mb-4">-->
-    <!--                            <div class="overflow-hidden" style="width: 100px; height: 100px; padding:10px">-->
-    <!--                                <img class="img-fluid h-100"-->
-    <!--                                    src="{{ asset('uploads/images/brand/' . $brand->brand_image) }}" alt="">-->
-    <!--                                <p>{{ asset('uploads/images/brand/' . $brand->brand_image) }}</p>-->
-    <!--                            </div>-->
-    <!--                            <div class="flex-fill pl-3">-->
-    <!--                                <h6>{{ $brand->brand_name }}</h6>-->
-    <!--                                <small class="text-body"></small>-->
-    <!--                            </div>-->
-    <!--                        </div>-->
-    <!--                    </a>-->
-    <!--                </div>-->
-    <!--
-    @endforeach-->
-    <!--        @endif-->
-    <!--    </div>-->
-    <!--</div>-->
-    <!-- brands End -->
-
-
-    {{-- <!-- Offer Start -->
-    <div class="container-fluid pt-5 pb-3">
-        <div class="row px-xl-5">
-            <div class="col-md-6">
-                <div class="product-offer mb-30" style="height: 300px;">
-                    <img class="img-fluid" src="img/offer-1.jpg" alt="">
-                    <div class="offer-text">
-                        <h6 class="text-white text-uppercase">Save 20%</h6>
-                        <h3 class="text-white mb-3">Special Offer</h3>
-                        <a href="" class="btn bg-blue">Shop Now</a>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-6">
-                <div class="product-offer mb-30" style="height: 300px;">
-                    <img class="img-fluid" src="img/offer-2.jpg" alt="">
-                    <div class="offer-text">
-                        <h6 class="text-white text-uppercase">Save 20%</h6>
-                        <h3 class="text-white mb-3">Special Offer</h3>
-                        <a href="" class="btn bg-blue">Shop Now</a>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div> --}}
-    <!-- Offer End -->
-
-
-
-
-
-
-    <!-- Products Start -->
-    <!-- <div class="container-fluid vender-container common-sec py-3 mb-4">
-                                                <h2 class="top-deals-title mb-3">Recent Products<a href="#">See all Products</a></h2>
-                                                <div class="row pb-3">
-                                                    @if ($recent)
-                                                    @foreach ($recent as $r)
-    <div class="col-lg-2 w-full col-md-2 col-6 col-sm-2 pb-4 px-3">
-                                                        <div class="card rounded px-2 h-100 d-flex flex-column">
-                                                            <div class="product-img position-relative overflow-hidden">
-                                                                @if ($r->images && count($r->images) > 0)
-    <img class="img-fluid w-100 img-thumbnail" src="uploads/images/product/{{ $r->images[0]->product_image }}" alt="">
-@else
-    <img class="img-fluid w-100 img-thumbnail" alt="{{ $r->product_name }}">
-    @endif
-
-                                                                <div class="product-action">
-                                                                    <a class="btn btn-outline-dark btn-square" href="{{ route('store.showProduct', $r->product_slug) }}"><i class="fa fa-eye"></i></a>
-                                                                </div>
-                                                            </div>
-                                                            <div class="py-4">
-                                                                <a class="h6 text-decoration-none text-blue-400" href="{{ route('store.showProduct', $r->product_slug) }}" data-toggle="tooltip" data-placement="top" title="{{ $r->product_name }}">
-                                                                    @if (strlen($r->product_name) > 25)
-    {{ substr($r->product_name, 0, 20) . '  ...  ' }}
-@else
-    {{ $r->product_name }}
-    @endif
-                                                                </a>
-                                                                <div class="d-flex align-items-center mt-2">
-                                                                    <h5>{{ session()->get('session_symbol') ?? '€' }} {{ App\MyHelpers::getPrice($r->product_price) }}</h5>
-                                                                    {{-- <h6 class="text-muted ml-2"><del>$123.00</del></h6> --}}
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-    @endforeach
-                                                    @endif
-                                                </div>
-                                            </div> -->
-    <!-- Products End -->
-
 
     <!-- Vendor Start -->
     <div class="container-fluid vender-container common-sec py-3 mb-4">
