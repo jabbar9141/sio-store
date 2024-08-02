@@ -145,7 +145,7 @@ class HomeController extends Controller
 
                 // Get items for today's orders and matching vendor
                 $items = ShopOrderItem::whereHas('item', function ($query) {
-                    $query->where('vendor_id', Auth::user()->vendor_shop->vendor_id);
+                    $query->where('vendor_id', Auth::user()->vendor_shop->vendor_id)->where('admin_approved', true)->where('product_status', true);
                 })
                     ->whereIn('order_id', $orderIds)
                     ->get();
@@ -158,7 +158,7 @@ class HomeController extends Controller
 
                 // Get items for today's walk-in orders and matching vendor
                 $walkin_items = WalkInOrderItem::whereHas('product', function ($query) {
-                    $query->where('vendor_id', Auth::user()->vendor_shop->vendor_id);
+                    $query->where('vendor_id', Auth::user()->vendor_shop->vendor_id)->where('admin_approved', true)->where('product_status', true);
                 })
                     ->whereIn('walk_in_order_id', $orderWalkIds)
                     ->get();
