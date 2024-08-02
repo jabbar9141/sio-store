@@ -469,7 +469,9 @@
 
                                 $shipping_cost = ((array) json_decode($shipping_cost));
 
-                            @endphp
+                                $all_variations = $product?->variations;
+
+                                @endphp
 
                             @if ($shipping_cost)
 
@@ -648,8 +650,7 @@
                                 <input type="text" class="form-control bg-secondary border-0 text-center"
                                     value="1" min="10" max="20" name="qty" readonly>
 
-                                <div class="input-group-btn">
-
+                                    <div class="input-group-btn">
                                     <button class="btn btn-primary btn-plus" type="button">
 
                                         <i class="fa fa-plus"></i>

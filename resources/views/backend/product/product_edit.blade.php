@@ -123,7 +123,7 @@
                                             </div>
                                             <div class=" mt-2 col-md-3">
                                                 <label for="inputProductQuantity" class="form-label">Quantity</label>
-                                                <input name="product_quantity[]" type="number" min="0"
+                                                <input name="product_quantity[]" type="number" min="1"
                                                     class="form-control" id="inputProductQuantity" required
                                                     value="{{ $variation->product_quantity }}">
                                                 <small style="color: #e20000" class="error"
@@ -660,7 +660,7 @@
             if (input_name == 'whole_sale_price[]') {
                 let price = $(obj).parents('#form-wrapper').find('input[name="prices[]"]').val();
                 if (price <= $(obj).val()) {
-                    $(obj).val(parseFloat(price) - 0.1)
+                    $(obj).val(price - 0.1)
                     Swal.fire({
                         icon: 'warning',
                         title: 'Warning',
@@ -674,7 +674,7 @@
             } else {
                 let wholesale_price = $(obj).parents('#form-wrapper').find('input[name="whole_sale_price[]"]').val()
                 if (wholesale_price >= $(obj).val()) {
-                    $(obj).val(parseFloat(wholesale_price) + 0.1)
+                    $(obj).val(wholesale_price + 0.1)
                     Swal.fire({
                         icon: 'warning',
                         title: 'Warning',

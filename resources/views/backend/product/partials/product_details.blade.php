@@ -16,9 +16,10 @@
             </tr>
             <tr>
                 <th>Product Variants</th>
-                <td>{{ $product->product_name }}</td>
+                <td>Colors: {{ implode(', ', $product->variations->pluck('color_name')->toArray()) }} / Sizes:
+                    {{ implode(', ', $product->variations->pluck('size_name')->toArray()) }}</td>
                 <th>Admin Approved</th>
-                <td>{{ $product->admin_approved == 1 ? "Approved" : "Unapproved" }}</td>
+                <td>{{ $product->admin_approved == 1 ? 'Approved' : 'Unapproved' }}</td>
                 <th>Returns Allowed</th>
                 <td>{{ $product->returns_allowed == 1 ? 'Yes' : 'No' }}</td>
             </tr>
@@ -26,17 +27,17 @@
                 <th>Available Regions</th>
                 <td>{{ $product->available_regions }} <b>Origin:</b> <span>{{ $product->origin->name }}</span></td>
                 <th>Wholesale Available</th>
-                <td>{{ $product->wholesale_available == 1 ? "Yes" : "No" }}</td>
+                <td>{{ $product->wholesale_available == 1 ? 'Yes' : 'No' }}</td>
                 <th>Retail Available</th>
                 <td>{{ $product->retail_available == 1 ? 'Yes' : 'No' }}</td>
             </tr>
             <tr>
                 <th>Wholesale Price</th>
-                <td>&euro;{{ $product->wholesale_price }}</td>
+                <td>{{ implode(',', $product->variations->pluck('whole_sale_price')->toArray()) }}</td>
                 <th>Retail Price</th>
-                <td>&euro;{{ $product->product_price }}</td>
+                <td>{{ implode(',', $product->variations->pluck('price')->toArray()) }}</td>
                 <th>Product Stock Quantity</th>
-                <td>{{ $product->product_quantity }}</td>
+                <td>{{ implode(', ', $product->variations->pluck('product_quantity')->toArray()) }}</td>
             </tr>
             <tr>
                 <th>Category</th>
@@ -44,15 +45,15 @@
                 <th>Brand</th>
                 <td>{{ $product->brand ? $product->brand->brand_name : 'N/A' }}</td>
                 <th>Weight (Kg)</th>
-                <td>{{ $product->weight }}</td>
+                <td>{{ implode(',', $product->variations->pluck('weight')->toArray()) }}</td>
             </tr>
             <tr>
                 <th>Length (cm)</th>
-                <td>{{ $product->length }}</td>
+                <td>{{ implode(',', $product->variations->pluck('length')->toArray()) }}</td>
                 <th>Height (cm)</th>
-                <td>{{ $product->height }}</td>
+                <td>{{ implode(',', $product->variations->pluck('height')->toArray()) }}</td>
                 <th>Width (cm)</th>
-                <td>{{ $product->width }}</td>
+                <td>{{ implode(',', $product->variations->pluck('width')->toArray()) }}</td>
             </tr>
         </table>
     </div>

@@ -138,7 +138,7 @@
                                         <div class="col-md-3 mt-2">
                                             <label for="quantity">Quantity<span class="text-danger">*</span></label>
                                             <input class="form-control" type="number" name="product_quantity[]"
-                                                id="inputProductQuantity" min="0" required>
+                                                id="inputProductQuantity" min="1" required>
                                         </div>
                                         <div class="col-md-3 mt-2">
                                             <label class="form-label">Upload Video</label>
@@ -671,7 +671,7 @@
             if (input_name == 'whole_sale_price[]') {
                 let price = $(obj).parents('#form-wrapper').find('input[name="prices[]"]').val();
                 if (price <= $(obj).val()) {
-                    $(obj).val(parseFloat(price) - 0.1)
+                    $(obj).val(price - 0.1)
                     Swal.fire({
                         icon: 'warning',
                         title: 'Warning',
@@ -685,7 +685,7 @@
             } else {
                 let wholesale_price = $(obj).parents('#form-wrapper').find('input[name="whole_sale_price[]"]').val()
                 if (wholesale_price >= $(obj).val()) {
-                    $(obj).val(parseFloat(wholesale_price) + 0.1)
+                    $(obj).val(wholesale_price + 0.1)
                     Swal.fire({
                         icon: 'warning',
                         title: 'Warning',
