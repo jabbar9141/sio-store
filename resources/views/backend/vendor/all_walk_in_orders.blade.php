@@ -39,27 +39,30 @@
         <div class="card">
             <div class="card-body">
                 <div class="row">
-                    <div class="col-md-8">
+                    <div class="col-md-9">
                         <form action="" class="form-inline" method="get">
                             <div class="row">
                                 <small>Select date range and click proceed to get transactions</small>
                                 <br>
-                                <div class="col-sm-4">
+                                <div class="col-sm-3">
                                     <input type="date" class="form-control" name="start_date" placeholder="start date"
                                         value="{{ request()->start_date ?? '' }}" required>
                                 </div>
-                                <div class="col-sm-4">
+                                <div class="col-sm-3">
                                     <input type="date" class="form-control" name="end_date" placeholder="end date"
                                         value="{{ request()->end_date ?? '' }}" required>
                                 </div>
-                                <div class="col-sm-4">
-                                    <button type="submit" class="btn btn-primary">Proceed</button>
+                                <div class="col-sm-6">
+                                    <button type="submit" class="btn btn-primary" id="get_filter_btn">Proceed</button>
+                                    <button id="print-btn" class="btn btn-primary">Print</button>
+                                    <button id="pdf-btn" class="btn btn-danger">PDF</button>
+                                    <button id="csv-btn" class="btn btn-success">CSV</button>
                                 </div>
                             </div>
 
                         </form>
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <form action="" class="form-inline" method="get">
                             <div class="row mt-3">
                                 <div class="col-md-8">
@@ -74,8 +77,6 @@
                     </div>
 
                 </div>
-
-
                 <hr>
                 @if (isset($stats))
                     <table class="table table-bordered">
@@ -89,13 +90,16 @@
                         </tr>
                         <tr>
                             <th>Total Amount</th>
-                            <td>{{ \App\MyHelpers::fromEuroView(auth()->user()->currency_id,$stats['total_amt'])  }}</td>
+                            <td>{{ \App\MyHelpers::fromEuroView(auth()->user()->currency_id, $stats['total_amt']) }}</td>
                             <th>Total Successful</th>
-                            <td>{{ \App\MyHelpers::fromEuroView(auth()->user()->currency_id,$stats['total_success'])  }}</td>
+                            <td>{{ \App\MyHelpers::fromEuroView(auth()->user()->currency_id, $stats['total_success']) }}
+                            </td>
                             <th>Total Pending</th>
-                            <td>{{ \App\MyHelpers::fromEuroView(auth()->user()->currency_id,$stats['total_pending'])  }}</td>
+                            <td>{{ \App\MyHelpers::fromEuroView(auth()->user()->currency_id, $stats['total_pending']) }}
+                            </td>
                             <th>Total Cancelled</th>
-                            <td>{{ \App\MyHelpers::fromEuroView(auth()->user()->currency_id,$stats['total_cancelled'])  }}</td>
+                            <td>{{ \App\MyHelpers::fromEuroView(auth()->user()->currency_id, $stats['total_cancelled']) }}
+                            </td>
                         </tr>
                         <tr>
                             <th>Total Count</th>
@@ -122,11 +126,11 @@
 
                     <div class="d-flex justify-content-between mb-3">
                         <h5>Transaction List</h5>
-                        <div>
+                        {{-- <div>
                             <button id="print-btn" class="btn btn-primary">Print</button>
                             <button id="pdf-btn" class="btn btn-danger">PDF</button>
                             <button id="csv-btn" class="btn btn-success">CSV</button>
-                        </div>
+                        </div> --}}
                     </div>
                     <div class="table-responsive">
                         <table class="table table-bordered table-striped transaction-table" id="transaction-table">
@@ -148,21 +152,24 @@
                                     @php
                                         $product_ids = $entry->items->pluck('product_id')->toArray();
                                         $productNames = ProductModel::whereIn('product_id', $product_ids)
-                                                ->pluck('product_name')
-                                                ->toArray();
-                                        
+                                            ->pluck('product_name')
+                                            ->toArray();
+
                                         $productQuantity = implode(', ', $entry->items->pluck('qty')->toArray());
 
                                     @endphp
                                     <tr>
                                         <td>{{ $entry->slip_serial_no }}</td>
                                         <td>{{ $entry->customer_name }}</td>
-                                        <td> @foreach ($productNames as $productName)
-                                                  {{ $productName }}<br>
-                                             @endforeach</td>
+                                        <td>
+                                            @foreach ($productNames as $productName)
+                                                {{ $productName }}<br>
+                                            @endforeach
+                                        </td>
                                         <td>{{ $productQuantity }}</td>
                                         <td>{{ $entry->created_at }}</td>
-                                        <td>{{ \App\MyHelpers::fromEuroView(auth()->user()->currency_id,$entry->total_paid) }}</td>
+                                        <td>{{ \App\MyHelpers::fromEuroView(auth()->user()->currency_id, $entry->total_paid) }}
+                                        </td>
                                         <td>
                                             @if ($entry->status == 'Done')
                                                 <span class="badge bg-success">Done</span>
@@ -182,9 +189,6 @@
                 @else
                     <i>No records</i>
                 @endif
-
-                
-
             </div>
         </div>
     </div>
@@ -200,7 +204,6 @@
             document.body.innerHTML = originalContents;
             window.location.reload();
         });
-
 
         function downloadCSV(csv, filename) {
             var csvFile;
@@ -235,7 +238,9 @@
         }
 
         document.getElementById('csv-btn').addEventListener('click', function() {
-            exportTableToCSV('transactions.csv');
+            if ($('input[name="start_date"]').val() && $('input[name="end_date"]').val()) {
+                exportTableToCSV('transactions.csv');
+            }
         });
 
         document.getElementById('pdf-btn').addEventListener('click', function() {

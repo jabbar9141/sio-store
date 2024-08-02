@@ -82,10 +82,10 @@
                                         id="product_long_description-error"></small>
 
                                 </div>
- <!--<div class="mb-3">-->
- <!--                                   <label for="inputProductLongDescription" class="form-label">Mass upload CSV</label>-->
- <!--                                   <input type="file" name="csv_file" id="csv_file" class="form-control" accept=".csv">-->
- <!--                               </div>-->
+                                <!--<div class="mb-3">-->
+                                <!--                                   <label for="inputProductLongDescription" class="form-label">Mass upload CSV</label>-->
+                                <!--                                   <input type="file" name="csv_file" id="csv_file" class="form-control" accept=".csv">-->
+                                <!--                               </div>-->
 
 
                                 <div class="row mb-3">
@@ -125,14 +125,15 @@
                                         </div>
                                         <div class="col-md-3 mt-2">
                                             <label for="price">Price<span class="text-danger">*</span></label>
-                                            <input class="form-control" type="number" step="0.001" name="prices[]" id=""
-                                                required>
+                                            <input class="form-control" type="number" onfocusout="checkPrice(this)"
+                                                step="0.001" name="prices[]" id="" required>
                                         </div>
                                         <div class="col-md-3 mt-2">
                                             <label for="price">Whole Sale Price<span
                                                     class="text-danger">*</span></label>
-                                            <input class="form-control" type="number" step="0.001" name="whole_sale_price[]"
-                                                id="" required>
+                                            <input class="form-control" type="number" step="0.001"
+                                                onfocusout="checkPrice(this)" name="whole_sale_price[]" id=""
+                                                required>
                                         </div>
                                         <div class="col-md-3 mt-2">
                                             <label for="quantity">Quantity<span class="text-danger">*</span></label>
@@ -142,7 +143,7 @@
                                         <div class="col-md-3 mt-2">
                                             <label class="form-label">Upload Video</label>
                                             <input name="product_video[]" class="form-control video-input" type="file"
-                                                accept="video/*" >
+                                                accept="video/*">
                                             <div class="row video-preview" style="padding: 20px"></div>
                                             <small style="color: #e20000" class="error"
                                                 id="product_video-error"></small>
@@ -223,7 +224,7 @@
                                 <div class="row">
                                     <div class="form-group col-sm-6 mb-3">
                                         <label for="ships_from">Ships From <span class="text-danger">*</span></label>
-                                        <select id="" class="form-control"  name="ships_from" required>
+                                        <select id="" class="form-control" name="ships_from" required>
                                             <option value="">Shipping Origin</option>
                                             @foreach ($locs as $l)
                                                 <option value="{{ $l->id }}">{{ $l->name }},
@@ -620,9 +621,10 @@
 
                                         <div class="col-12">
                                             <button type="submit" class="btn btn-primary">
-        <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
-        Save Product
-    </button>
+                                                <span class="spinner-border spinner-border-sm d-none" role="status"
+                                                    aria-hidden="true"></span>
+                                                Save Product
+                                            </button>
                                         </div>
                                     </div>
                                 </div>
@@ -650,6 +652,52 @@
         });
     </script>
     <script>
+        function checkPrice(obj) {
+            let input_name = $(obj).attr('name');
+
+            if ($(obj).val() < 1) {
+                $(obj).val(1);
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Warning',
+                    text: 'Price must be greater than 1',
+                    showDenyButton: false,
+                    showCancelButton: false,
+                    confirmButtonText: 'OK'
+                });
+                return false;
+            }
+
+            if (input_name == 'whole_sale_price[]') {
+                let price = $(obj).parents('#form-wrapper').find('input[name="prices[]"]').val();
+                if (price <= $(obj).val()) {
+                    $(obj).val(parseFloat(price) - 0.1)
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Warning',
+                        text: 'Price must be greater than whole sale price',
+                        showDenyButton: false,
+                        showCancelButton: false,
+                        confirmButtonText: 'OK'
+                    });
+                }
+
+            } else {
+                let wholesale_price = $(obj).parents('#form-wrapper').find('input[name="whole_sale_price[]"]').val()
+                if (wholesale_price >= $(obj).val()) {
+                    $(obj).val(parseFloat(wholesale_price) + 0.1)
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Warning',
+                        text: 'Price must be greater than whole sale price',
+                        showDenyButton: false,
+                        showCancelButton: false,
+                        confirmButtonText: 'OK'
+                    });
+                }
+            }
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
             var formWrapper = document.getElementById('form-wrapper');
             var addButton = document.getElementById('add-btn');
@@ -773,7 +821,7 @@
             }
         });
 
- ;
+        ;
     </script>
     <script type="text/javascript">
         $(document).ready(function() {
@@ -824,10 +872,10 @@
 
             $('#product_form').on('submit', function(event) {
                 event.preventDefault();
-                
+
                 var $submitButton = $('button[type="submit"]');
                 var $spinner = $submitButton.find('.spinner-border');
-            
+
                 // // Show spinner and disable button
                 $spinner.removeClass('d-none');
                 $submitButton.prop('disabled', true);
@@ -873,7 +921,8 @@
                         price: price,
                         quantity: quantity,
                         fileIndices: Array.from(files).map((file, fileIndex) => fileIndex),
-                        videoIndices: Array.from(product_videos).map((product_videos, product_videosIndex) => product_videosIndex),
+                        videoIndices: Array.from(product_videos).map((product_videos,
+                            product_videosIndex) => product_videosIndex),
 
                         whole_sale_price: whole_sale_price
                     };
@@ -898,10 +947,10 @@
                         $('#product_form *').filter('.error').each(function() {
                             this.innerHTML = '';
                         });
-                        
-                          // Hide spinner and re-enable button
-                            $spinner.addClass('d-none');
-                            $submitButton.prop('disabled', false);
+
+                        // Hide spinner and re-enable button
+                        $spinner.addClass('d-none');
+                        $submitButton.prop('disabled', false);
                         Swal.fire({
                             icon: 'success',
                             title: response.msg,
@@ -919,8 +968,8 @@
                             $('#' + key + '-error').text(err[0]);
                             $('#' + key).addClass('is-invalid');
                         });
-                        
-                          // Hide spinner and re-enable button
+
+                        // Hide spinner and re-enable button
                         $spinner.addClass('d-none');
                         $submitButton.prop('disabled', false);
                     }
