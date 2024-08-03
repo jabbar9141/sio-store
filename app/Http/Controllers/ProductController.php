@@ -1287,8 +1287,16 @@ class ProductController extends Controller
         $contants = [];
 
         if (($handle = fopen($file, 'r')) !== false) {
-            $header = fgetcsv($handle, 1000, ';');
-            while (($row = fgetcsv($handle, 1000, ';')) !== false) {
+            $line = fgets($handle);
+            rewind($handle);
+
+            // Detect the delimiter based on the first line
+            $delimiter = (strpos($line, ';') !== false) ? ';' : ',';
+
+            $header = fgetcsv($handle, 1000, $delimiter);
+            $contants = [];
+
+            while (($row = fgetcsv($handle, 1000, $delimiter)) !== false) {
                 if (count($row) === count($header)) {
                     $contants[] = array_combine($header, $row);
                     if (count($contants) >= 100) {
@@ -1298,6 +1306,7 @@ class ProductController extends Controller
                 }
             }
             fclose($handle);
+
             if (!empty($contants)) {
                 $this->processBatch($contants, $request, $vendor_id);
             }
@@ -1310,7 +1319,6 @@ class ProductController extends Controller
 
     public function processBatch(array $contants, $request, $vendor_id)
     {
-
         foreach ($contants as $contant) {
             $productCode = $contant['sku'] ?? '';
             $title = $contant['name'] ?? '';
@@ -1319,64 +1327,66 @@ class ProductController extends Controller
             $wholesalePrice  = is_numeric($contant['pvd']) ? $contant['pvd'] : 0;
             $price  = is_numeric($contant['pvr']) ? $contant['pvr'] : 0;
 
-            $existProduct = ProductModel::where('vendor_id', $vendor_id)->where('product_code', $productCode)->first();
+            if ($stock > 0 && $wholesalePrice > 0 && $price > 0) {
+                $existProduct = ProductModel::where('vendor_id', $vendor_id)->where('product_code', $productCode)->first();
 
-            if (!isset($existProduct)) {
-                $image = isset($imageURl) ? $this->uploadImageFromURL(explode(';', $imageURl)[0], self::PRODUCT_IMAGES_PATH) : '';
-                $productData = [
-                    'product_name' => $title,
-                    'product_code' => $productCode,
-                    'product_tags' => implode(',', explode(' ', $title)),
-                    'product_colors' => json_encode([]),
-                    'admin_approved' => 0,
-                    'returns_allowed' => 1,
-                    'available_regions' => json_encode(["global"]),
-                    'wholesale_available' => 1,
-                    'retail_available' => 1,
-                    'wholesale_price' => MyHelpers::toEuro(Auth::user()?->currency_id, (float) $wholesalePrice),
+                if (!isset($existProduct)) {
+                    $image = isset($imageURl) ? $this->uploadImageFromURL(explode(';', $imageURl)[0], self::PRODUCT_IMAGES_PATH) : '';
+                    $productData = [
+                        'product_name' => $title,
+                        'product_code' => $productCode,
+                        'product_tags' => implode(',', explode(' ', $title)),
+                        'product_colors' => json_encode([]),
+                        'admin_approved' => 0,
+                        'returns_allowed' => 1,
+                        'available_regions' => json_encode(["global"]),
+                        'wholesale_available' => 1,
+                        'retail_available' => 1,
+                        'wholesale_price' => MyHelpers::toEuro(Auth::user()?->currency_id, (float) $wholesalePrice),
 
-                    'product_short_description' => htmlentities(substr($title, 0, 120), ENT_QUOTES, 'UTF-8'),
-                    'product_long_description' => htmlentities($title, ENT_QUOTES, 'UTF-8'),
-                    'product_slug' => $this->getProductSlug($title),
-                    'product_price' => MyHelpers::toEuro(Auth::user()?->currency_id, (float) $price),
-                    'product_thumbnail' => $image,
-                    'product_status' => 0,
-                    'category_id' => 8,
-                    'sub_category_id' => null,
-                    'brand_id' => 1,
-                    'vendor_id' => $vendor_id,
-                    'length' => 1.00,
-                    'weight' => 1.00,
-                    'height' => 1.00,
-                    'width' => 1.00,
-                    'ships_from' => 1,
-                    'product_quantity' => $stock ?? 0,
-                ];
+                        'product_short_description' => htmlentities(substr($title, 0, 120), ENT_QUOTES, 'UTF-8'),
+                        'product_long_description' => htmlentities($title, ENT_QUOTES, 'UTF-8'),
+                        'product_slug' => $this->getProductSlug($title),
+                        'product_price' => MyHelpers::toEuro(Auth::user()?->currency_id, (float) $price),
+                        'product_thumbnail' => $image,
+                        'product_status' => 0,
+                        'category_id' => 8,
+                        'sub_category_id' => null,
+                        'brand_id' => 1,
+                        'vendor_id' => $vendor_id,
+                        'length' => 1.00,
+                        'weight' => 1.00,
+                        'height' => 1.00,
+                        'width' => 1.00,
+                        'ships_from' => 1,
+                        'product_quantity' => $stock ?? 0,
+                    ];
 
-                $insertedProductId = ProductModel::insertGetId($productData);
+                    $insertedProductId = ProductModel::insertGetId($productData);
 
-                if ($insertedProductId) {
-                    ProductImagesModel::create([
-                        'product_image' => $image,
-                        'image_product_id' => $insertedProductId
-                    ]);
-                    ProductVariation::create([
-                        'product_id' => $insertedProductId,
-                        'color_id' => 0,
-                        'size_id' => 0,
-                        'dimention_id' => 0,
-                        'price' => MyHelpers::toEuro(Auth::user()?->currency_id, (float) $price),
-                        'product_quantity' =>  $stock ?? 0,
-                        'whole_sale_price' => MyHelpers::toEuro(Auth::user()?->currency_id, (float) $wholesalePrice),
-                    ]);
+                    if ($insertedProductId) {
+                        ProductImagesModel::create([
+                            'product_image' => $image,
+                            'image_product_id' => $insertedProductId
+                        ]);
+                        ProductVariation::create([
+                            'product_id' => $insertedProductId,
+                            'color_id' => 0,
+                            'size_id' => 0,
+                            'dimention_id' => 0,
+                            'price' => MyHelpers::toEuro(Auth::user()?->currency_id, (float) $price),
+                            'product_quantity' =>  $stock ?? 0,
+                            'whole_sale_price' => MyHelpers::toEuro(Auth::user()?->currency_id, (float) $wholesalePrice),
+                        ]);
 
-                    ProductModel::where('product_id', $insertedProductId)->update([
-                        'total_variation_quantity' => (int)$stock,
-                        'total_variation_whole_sale_price' => (int)$stock * (float)$wholesalePrice,
-                        'total_variation_price' => (int)$stock * (float)$price,
-                    ]);
-                } else {
-                    Log::error('Failed to add product: ' . $title);
+                        ProductModel::where('product_id', $insertedProductId)->update([
+                            'total_variation_quantity' => (int)$stock,
+                            'total_variation_whole_sale_price' => (int)$stock * (float)$wholesalePrice,
+                            'total_variation_price' => (int)$stock * (float)$price,
+                        ]);
+                    } else {
+                        Log::error('Failed to add product: ' . $title);
+                    }
                 }
             }
         }
