@@ -585,11 +585,11 @@ class ShopOrderController extends Controller
 
         // if ($response->successful()) {
         //     $body = $response->json();
-            $item->tracking_id = rand(500000, 50000000);
-            $item->status = 'Shipped';
-            $item->save();
+        $item->tracking_id = rand(500000, 50000000);
+        $item->status = 'Shipped';
+        $item->save();
 
-            return back()->with(['success' => 'Success']);
+        return back()->with(['success' => 'Success']);
         // } else {
         //     Log::error($response->json()['message'], [$response->json()]);
         //     return back()->with(['error' => $response->json()['message']]);
@@ -601,6 +601,7 @@ class ShopOrderController extends Controller
         $provider = new PayPalClient;
         $provider->setApiCredentials(config('paypal'));
         $provider->setCurrency('EUR');
+        $formattedPrice = number_format($price, 2, '.', '');
         $paypalToken = $provider->getAccessToken();
         $response = $provider->createOrder([
             "intent" => "CAPTURE",
@@ -612,7 +613,7 @@ class ShopOrderController extends Controller
                 0 => [
                     "amount" => [
                         "currency_code" => "EUR",
-                        "value" => $price
+                        "value" => $formattedPrice
                     ],
                 ],
             ],
@@ -623,9 +624,18 @@ class ShopOrderController extends Controller
                     return redirect()->away($links['href']);
                 }
             }
-
+            $order = ShopOrder::find($order_id);
+            if ($order) {
+                $order->items->delete();
+                $order->delete();
+            }
             return back()->with(['error' => $response['message'] ?? 'Something went wrong']);
         } else {
+            $order = ShopOrder::find($order_id);
+            if ($order) {
+                $order->items->delete();
+                $order->delete();
+            }
             return back()->with(['error' => $response['message'] ?? 'Something went wrong']);
         }
     }

@@ -668,12 +668,13 @@
                 return false;
             }
 
+            let objValue = parseFloat($(obj).val());
             let parent_group = $(obj).parents('.input-group');
-
             if (input_name == 'whole_sale_price[]') {
-                let price = $(parent_group).find('input[name="prices[]"]').val();
-                if (price <= $(obj).val()) {
-                    $(obj).val(0)
+                let price = parseFloat($(parent_group).find('input[name="prices[]"]').val());
+                if (price <= objValue) {
+                    let difference = price - 1;
+                    $(obj).val(difference);
                     Swal.fire({
                         icon: 'warning',
                         title: 'Warning',
@@ -683,11 +684,11 @@
                         confirmButtonText: 'OK'
                     });
                 }
-
             } else {
-                let wholesale_price = $(parent_group).find('input[name="whole_sale_price[]"]').val()
-                if (wholesale_price >= $(obj).val()) {
-                    $(obj).val(0)
+                let wholesale_price = parseFloat($(parent_group).find('input[name="whole_sale_price[]"]').val());
+                if (wholesale_price >= objValue) {
+                    let difference = wholesale_price + 1;
+                    $(obj).val(difference);
                     Swal.fire({
                         icon: 'warning',
                         title: 'Warning',
@@ -869,8 +870,19 @@
                 event.target.value = '';
             });
 
-
-
+            $(document).on('change', 'input[name="product_quantity[]"]', function() {
+                if(this.value < 0) {
+                    this.value = 1;
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Warning',
+                        text: 'Quantity must be greater than 0',
+                        showDenyButton: false,
+                        showCancelButton: false,
+                        confirmButtonText: 'OK'
+                    });
+                }
+            })
 
             $('#product_form').on('submit', function(event) {
                 event.preventDefault();

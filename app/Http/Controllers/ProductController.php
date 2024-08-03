@@ -801,7 +801,46 @@ class ProductController extends Controller
                     }
 
                     if ($productVariation['variation_id'] != '') {
-                        ProductVariation::where('id', $productVariation['variation_id'])->update($variationResult);
+                        $prodVariation = ProductVariation::where('id', $productVariation['variation_id'])->first();
+                        $oldQuantity = $prodVariation->product_quantity;
+
+                        if ($oldQuantity > (int)$variationResult['product_quantity']) {
+                            $newQuantity = $oldQuantity - $variationResult['product_quantity'];
+                            $newPrice = $newQuantity * $prodVariation->price;
+                            $newWholeSale = $newQuantity * $prodVariation->whole_sale_price;
+
+                            $prodVariation->product->update([
+                                'total_variation_quantity' => $prodVariation->product->total_variation_quantity - $newQuantity,
+                                'total_variation_price' =>  $prodVariation->product->total_variation_price - $newPrice,
+                                'total_variation_whole_sale_price' => $prodVariation->product->total_variation_whole_sale_price - $newWholeSale,
+                            ]);
+                        } elseif ($oldQuantity < (int)$variationResult['product_quantity']) {
+                            $newQuantity = $variationResult['product_quantity'] - $oldQuantity;
+                            $newPrice = $newQuantity * $variationResult['price'];
+                            $newWholeSale = $newQuantity * $variationResult['whole_sale_price'];
+
+                            $prodVariation->product->update([
+                                'total_variation_quantity' => $prodVariation->product->total_variation_quantity + $newQuantity,
+                                'total_variation_price' =>  $prodVariation->product->total_variation_price + $newPrice,
+                                'total_variation_whole_sale_price' => $prodVariation->product->total_variation_whole_sale_price + $newWholeSale,
+                            ]);
+                        } else {
+                            $oldVariationPrice = $prodVariation->price;
+                            $oldVariationWholeSalePrice = $prodVariation->whole_sale_price;
+
+                            $getOldTotalPrice = $prodVariation->product->total_variation_price - ($oldVariationPrice * $oldQuantity);
+                            $getOldTotalWholeSalePrice = $prodVariation->product->total_variation_whole_sale_price - ($oldVariationWholeSalePrice * $oldQuantity);
+
+                            $newTotalPrice = $variationResult['price'] * $oldQuantity;
+                            $newTotalWholeSalePrice = $variationResult['whole_sale_price'] * $oldQuantity;
+
+                            $prodVariation->product->update([
+                                'total_variation_price' =>  $getOldTotalPrice + $newTotalPrice,
+                                'total_variation_whole_sale_price' => $getOldTotalWholeSalePrice + $newTotalWholeSalePrice,
+                            ]);
+                        }
+
+                        $prodVariation->update($variationResult);
                     } else {
                         ProductVariation::create($variationResult);
                     }
