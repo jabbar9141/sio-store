@@ -200,6 +200,9 @@ Route::get('cancel/payment/{order_id}', [ShopOrderController::class, 'cancel'])-
 Route::get('success/payment/{order_id}', [ShopOrderController::class, 'success'])->name('success.payment');
 Route::get('success/paystack-payment/{order_id}', [ShopOrderController::class, 'successPaystack'])->name('success.paystack-payment');
 
+Route::get('/paystack/callback/{order_id}', [ShopOrderController::class, 'payStackCallback'])->name('paystack.callback');
+
+
 // Route::get('/import-test', function () {
 //     ShippingCost::truncate();
 //     set_time_limit(10000);

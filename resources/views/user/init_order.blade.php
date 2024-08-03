@@ -195,11 +195,11 @@
                                     <label class="custom-control-label" for="paypal">PAYPAL</label>
                                 </div>
 
-                                {{-- <div class="custom-control custom-radio ">
+                                <div class="custom-control custom-radio ">
                                     <input type="radio" class="custom-control-input" name="payment" id="paystack"
                                         value="PAYSTACK" required>
                                     <label class="custom-control-label" for="paystack">PayStack</label>
-                                </div> --}}
+                                </div>
                             </div>
                             <button class="btn btn-block btn-primary font-weight-bold py-3" id="place_order_btn"
                                 disabled>Place Order</button>

@@ -395,20 +395,19 @@ class ShopOrderController extends Controller
                 $cost = ($cost + $order->shipping_cost);
 
                 return $this->createPayment($cost, $order->id);
-            }
-            // elseif ($request->payment == "PAYSTACK") {
-            //     $cost = 0;
+            } elseif ($request->payment == "PAYSTACK") {
+                $cost_to_pay = 0;
 
-            //     foreach ($order->items as $it) {
-            //         $price = $it->total_price ?? 0; //
-            //         if ($price == 0) {
-            //             $price = $it->variation->price * $it->qty;
-            //         }
-            //         $cost = $cost + ($price * 100);
-            //     }
-            //     $cost = ($cost + $order->shipping_cost);
-            // }
-            else {
+                foreach ($order->items as $it) {
+                    $price = $it->total_price ?? 0;
+                    if ($price == 0) {
+                        $price = $it->variation->price * $it->qty;
+                    }
+                    $cost_to_pay = $cost_to_pay + $price;
+                }
+                $cost_to_pay = ($cost_to_pay + $order->shipping_cost);
+                return $this->createPayStackPayment($cost_to_pay, $order->id);
+            } else {
                 // DB::rollBack();
                 return back()->with(['error' => "Failed to initiate payment, please try again later"]);
             }
@@ -684,6 +683,115 @@ class ShopOrderController extends Controller
                 $order->delete();
             }
             return back()->with(['error' => $response['message'] ?? 'Something went wrong']);
+        }
+    }
+
+    public function getExchangeRate()
+    {
+        $response = Http::get('https://www.google.com/search?q=1+EUR+to+NGN');
+
+        if ($response->successful()) {
+            $body = $response->body();
+
+            // Use a regex pattern to extract the exchange rate from the Google search result page
+            preg_match('/<div class="BNeawe iBp4i AP7Wnd">([\d,\.]+) Nigerian Naira<\/div>/', $body, $matches);
+
+            if (isset($matches[1])) {
+                // Convert the extracted rate to a float and remove any commas
+                return floatval(str_replace(',', '', $matches[1]));
+            }
+        }
+
+        return null;
+    }
+
+    public function createPayStackPayment($price, $order_id)
+    {
+        $exchangeRate = $this->getExchangeRate();
+        // $formattedPrice = number_format($price, 2, '.', '');
+        if ($exchangeRate) {
+            $amountInNaira = ($price * $exchangeRate); // Amount in kobo
+            $formattedPrice = number_format($amountInNaira, 2, '.', '');
+
+            $response = Http::withToken(env('PAYSTACK_SECRET_KEY'))->post('https://api.paystack.co/transaction/initialize', [
+                'email' => Auth::user()->email,
+                'amount' => $formattedPrice * 100,
+                'callback_url' => 'https://www.siostore.eu/', // route('paystack.callback', ['order_id' => $order_id])
+            ]);
+
+            $data = $response->json();
+
+            if ($data['status']) {
+                return redirect($data['data']['authorization_url']);
+            } else {
+                $order = ShopOrder::find($order_id);
+                if ($order) {
+                    $order->items->delete();
+                    $order->delete();
+                }
+                return back()->with('error', 'Unable to initiate payment. Please try again.');
+            }
+        } else {
+            $order = ShopOrder::find($order_id);
+            if ($order) {
+                $order->items->delete();
+                $order->delete();
+            }
+            return back()->with('error', 'Unable to fetch exchange rate. Please try again.');
+        }
+    }
+
+    public function payStackCallback(Request $request, $order_id)
+    {
+        $reference = $request->query('reference');
+
+        $response = Http::withToken(env('PAYSTACK_SECRET_KEY'))->get("https://api.paystack.co/transaction/verify/{$reference}");
+
+        $data = $response->json();
+
+        if ($data['status'] && $data['data']['status'] == 'success') {
+            // Payment was successful
+            $order = ShopOrder::find($order_id);
+
+            if ($order) {
+                $lp = new ShopOrderPayment;
+                $lp->ref = $data['data']['reference'];
+                $lp->payment_method = 'PAYSTACK';
+                $lp->order_id = $order->id;
+                $lp->amount = (float)($order->items->sum('total_amount') ?? 0) + (float)($order->shipping_cost ?? 0);
+                $lp->metadata = $order->metadata;
+                $lp->status = 'Completed';
+                $lp->save();
+
+                foreach ($order->items as $item) {
+                    $variation = ProductVariation::where('id', $item->product_variation_id)->first();
+                    if ($variation) {
+                        $variation->product_quantity = $variation->product_quantity - $item->qty;
+                        $variation->save();
+                    } else {
+                        $item->item->product_quantity = $item->item->product_quantity - $item->qty;
+                        $item->item->save();
+                    }
+                }
+
+                // Empty cart
+                $cart = Cart::where('user_id', Auth::id())->where('status', 1)->first();
+                if ($cart) {
+                    $cart->status = 0;
+                    $cart->save();
+                }
+                session()->forget('cart');
+            }
+
+            return redirect()->route('payment.success');
+        } else {
+            $order = ShopOrder::find($order_id);
+            if ($order) {
+                $order->items->delete();
+                $order->delete();
+            }
+            // Payment failed
+            return redirect()->route('payment.failed');
         }
     }
 
