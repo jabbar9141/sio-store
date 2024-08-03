@@ -16,15 +16,15 @@ return new class extends Migration
         if (Schema::hasTable('product')) {
             Schema::table('product', function (Blueprint $table) {
                 if (!Schema::hasColumn('product', 'total_variation_quantity')) {
-                    $table->integer('total_variation_quantity')->nullable();
+                    $table->bigInteger('total_variation_quantity')->nullable();
                 }
 
                 if (!Schema::hasColumn('product', 'total_variation_whole_sale_price')) {
-                    $table->float('total_variation_whole_sale_price')->nullable();
+                    $table->double('total_variation_whole_sale_price')->nullable();
                 }
 
                 if (!Schema::hasColumn('product', 'total_variation_price')) {
-                    $table->float('total_variation_price')->nullable();
+                    $table->double('total_variation_price')->nullable();
                 }
             });
         }
