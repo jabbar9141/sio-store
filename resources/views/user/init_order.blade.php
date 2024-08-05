@@ -36,6 +36,7 @@
                                                 <div class="col-4">
                                                     <input type="radio" name="billing_address" class=""
                                                         value="{{ $add->id }}" id="add_{{ $add->id }}"
+                                                        data-address-id="{{ $add->id }}"
                                                         onchange="evaluateShipping(this)"
                                                         data-country-iso-2="{{ $add->country }}">
                                                 </div>
@@ -209,7 +210,8 @@
             </div>
         </form>
         <!-- Modal -->
-        <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel"
+            aria-hidden="true">
             <div class="modal-dialog modal-lg">
                 <div class="modal-content">
                     <div class="modal-header">
@@ -575,6 +577,7 @@
                 });
 
                 let address = $(obj).val();
+                let address_id = $(obj).data('address-id');
                 let order_id = $('#current_order_id').val();
                 let shiping_cost_of_cart = $('#shiping_cost_of_cart');
 
@@ -590,7 +593,7 @@
                             country_iso_2: country_iso_2,
                             weights: weight,
                             euro_cart_total: $('#euro_cart_total').val(),
-                            // address_id: address,
+                            address_id: address_id,
                             // order_id: order_id
                         },
                         success: function(response) {

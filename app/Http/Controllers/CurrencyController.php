@@ -19,7 +19,7 @@ class CurrencyController extends Controller
         ];
 
         return view('backend.admin.currency.index', $data);
-        
+
     }
 
     /**
@@ -54,7 +54,7 @@ class CurrencyController extends Controller
                 'currency_rate' => $exchangeRate,
                 'status' => true
             ]);
-    
+
             return response()->json([
                 'success' => true,
                 'msg' => 'Currency added successfully'
@@ -65,7 +65,7 @@ class CurrencyController extends Controller
                 'msg' => 'Something went wrong'
             ]);
         }
-      
+
     }
 
     /**

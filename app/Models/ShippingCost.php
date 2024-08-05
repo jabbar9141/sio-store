@@ -15,4 +15,9 @@ class ShippingCost extends Model
         'country_iso_2',
         'cost',
     ];
+
+    public function country()
+    {
+        return Country::where('iso2', $this->country_iso_2)->first();
+    }
 }

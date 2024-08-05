@@ -77,8 +77,8 @@
             </form>
 
         </li>
-       
-        
+
+
         <li class="menu-label">Personal Shopping Menu</li>
         <li>
             <a class="has-arrow" style="cursor: pointer">
@@ -157,6 +157,13 @@
                         <div class="menu-title">Currency</div>
                     </a>
                 </li>
+                <li>
+                    <a href="{{ route('admin-country-list') }}" aria-expanded="false">
+                        <div class="parent-icon"><i class="bx bx-flag"></i>
+                        </div>
+                        <div class="menu-title">Country</div>
+                    </a>
+                </li>
             @endif
             @if (isset($can) && ($can == 'all' || $can == 'accounts'))
                 <li>
@@ -221,7 +228,7 @@
                 </a>
 
             </li>
-           
+
             <li>
                 <a class="has-arrow" style="cursor: pointer">
                     <div class="parent-icon"><i class='lni lni-network'></i>

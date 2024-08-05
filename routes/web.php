@@ -19,6 +19,7 @@ use App\Models\product\ProductModel;
 use App\Models\ProductVariation;
 use App\Models\ShippingCost;
 use App\Models\ShopOrder;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Mail\Message;
 use Illuminate\Support\Facades\Artisan;
@@ -43,6 +44,16 @@ Route::get('/make-model', function () {
     // Generate the model and migration
     $exitCode = Artisan::call('make:migration', [
         'name' => 'add_column_quantity_in_product_variation',
+    ]);
+
+    return "Model and migration created successfully";
+});
+
+Route::get('/make-model-migration', function () {
+    // Generate the model and migration
+    $exitCode = Artisan::call('make:model', [
+        'name' => 'Country',
+        '-m' => true,
     ]);
 
     return "Model and migration created successfully";
@@ -202,6 +213,12 @@ Route::get('success/paystack-payment/{order_id}', [ShopOrderController::class, '
 
 Route::get('/paystack/callback/{order_id}', [ShopOrderController::class, 'payStackCallback'])->name('paystack.callback');
 
+Route::post('city-address', function (Request $request) {
+    $cities = App\Models\city::where('name', 'like', $request->input)->get();
+    return response()->json([
+        'cities' => $cities ?? []
+    ]);
+})->name('city-address');
 
 // Route::get('/import-test', function () {
 //     ShippingCost::truncate();

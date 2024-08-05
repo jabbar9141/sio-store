@@ -13,6 +13,8 @@ use Illuminate\Support\Facades\Notification;
 use App\Http\Controllers\Controller;
 use App\Models\BrandModel;
 use App\Models\CategoryModel;
+use App\Models\CityShippingCost;
+use App\Models\Country;
 use App\Models\product\ProductModel;
 use App\Models\product\ProductOffersModel;
 use App\Models\ShopOrder;
@@ -429,6 +431,116 @@ class AdminController extends Controller
             })
             ->rawColumns(['action'])
             ->make(true);
+    }
+
+    public function country()
+    {
+        return view('backend.admin.all_countries');
+    }
+
+    public function allCountriesData()
+    {
+        $items = Country::get();
+
+        // dd($items);
+
+        return DataTables::of($items)
+            ->addIndexColumn()
+            // ->addColumn('order_id', function ($item) {
+            //     return ($item->order ? ($item->order->order_id) : 'N/A');
+            // })
+            ->addColumn('name', function ($item) {
+                return ($item->name ?? 'N/A');
+            })
+            ->addColumn('iso2', function ($item) {
+                return (($item->iso2 ?? 'N/A'));
+            })
+            // ->addColumn('price', function ($item) {
+            //     return (($item->item ? ($item->item->product_price) : 'N/A'));
+            // })
+            // ->addColumn('order_id', function ($item) {
+            //     return (($item->item ? ($item->order->order_id) : 'N/A'));
+            // })
+            // ->addColumn('status', function ($item) {
+            //     return $item->status;
+            // })
+            ->addColumn('action', function ($item) {
+                $url = route('admin-country-details', $item->id);
+                return '<a href="' . $url . '" class="btn btn-info btn-sm" ><i class="fa fa-eye"></i> View</a>';
+            })
+            ->rawColumns(['action'])
+            ->make(true);
+    }
+
+    public function countryDetails($id)
+    {
+        $country = Country::find($id);
+
+        // dd($country->shippingCosts[0]->weight);
+
+        $data = [
+            'country' => $country,
+            'cities' => $country->cities ?? [],
+            // 'shippingCosts' => $country->shippingCost
+        ];
+        return view('backend/admin/country-details', $data);
+    }
+
+    public function saveCost(Request $request, $id)
+    {
+        $request->validate([
+            'cities' => 'required',
+            'cost' => 'required|min:0',
+            'weight' => 'required|min:0',
+        ]);
+
+        $country = Country::find($id);
+
+        if ($request->cities == 'all') {
+            $country->cities;
+
+            foreach ($country->cities as $city) {
+                $shippingCost = new CityShippingCost();
+
+                $shippingCost->updateOrCreate([
+                    'country_id' => $country->id,
+                    'city_id' => $city->id,
+                ], [
+                    'country_id' => $country->id,
+                    'cost' => $request->cost,
+                    'weight' => $request->weight ?? null,
+                    'city_id' => $city->id,
+                ]);
+                // $shippingCost->country_id = $country->id;
+                // $shippingCost->cost = $request->cost;
+                // $shippingCost->weight = $request->weight;
+                // $shippingCost->city_id = $city->id;
+                // $shippingCost->save();
+
+            }
+            return redirect()->back()->withSuccess('Data Saved Successfully');
+        } elseif ($request->cities !== 'all') {
+            foreach ($request->cities as $city) {
+                $shippingCost = new CityShippingCost();
+                $shippingCost->updateOrCreate([
+                    'country_id' => $country->id,
+                    'city_id' => $city->id,
+                ], [
+                    'country_id' => $country->id,
+                    'cost' => $request->cost,
+                    'weight' => $request->weight ?? null,
+                    'city_id' => $city->id,
+                ]);
+                // $shippingCost->country_id = $country->id;
+                // $shippingCost->cost = $request->cost;
+                // $shippingCost->weight = $request->weight;
+                // $shippingCost->city_id = $city->id;
+                // $shippingCost->save();
+            }
+            return redirect()->back()->withSuccess('Data Saved Successfully');
+        } else {
+            return redirect()->back()->withErrors('If Selecting individual cities, please unselect All Cities options');
+        }
     }
 
     public function showAllOrders($order_item_id)

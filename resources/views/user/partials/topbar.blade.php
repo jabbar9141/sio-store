@@ -70,14 +70,19 @@
                                 <button type="button" class="btn-close" id="modalCloseButton">X</button>
                             </div>
                             <div class="modal-body">
-                                <div class="input-group input-group-sm">
-                                    <input type="text" id="search_location" class="form-control location-picker"
-                                        placeholder="Ship To..." value="{{ session('ship_to_str') }}" autocomplete="off"
-                                        autofocus>
-                                    <div class="input-group-append">
-                                        <span class="input-group-text bg-white border-left-0"><i
-                                                class="fas fa-map-marker-alt text-primary"></i></span>
+                                <form id="delivery_details">
+                                    <div class="col-12">
+                                        <input type="text" id="city_address" class="form-control"
+                                            placeholder="City Ship To..." value="" autocomplete="off" autofocus>
                                     </div>
+                                    <div class="mt-2">
+                                        <button class="btn btn-primary">Search</button>
+                                    </div>
+                                </form>
+                                <div class="input-group input-group-sm" id="city_dropdown">
+                                    <select id="user_address" class="select2">
+                                        <option value=""></option>
+                                    </select>
                                 </div>
 
                                 <div id="location_suggestions"></div>
@@ -152,7 +157,7 @@
                             @else
                                 <option value="0" @selected(true)>EUR</option>
                                 @foreach ($currencies as $currency)
-                                    <option value="{{ $currency->id }}" >
+                                    <option value="{{ $currency->id }}">
                                         {{ $currency->country_code }}</option>
                                 @endforeach
                             @endif
@@ -360,7 +365,7 @@
                                                 {{ $currency->country_code }}</option>
                                         @endforeach
                                     @endif
-        
+
                                 </select>
                             </form>
                             {{-- <button type="button"
@@ -378,7 +383,7 @@
                                 <button class="dropdown-item" data-currency="GHS" type="button">GHS</button>
                                 <button class="dropdown-item" data-currency="GBP" type="button">GBP</button>
                                 <button class="dropdown-item" data-currency="XAF" type="button">XAF</button> --}}
-                                {{-- <button class="dropdown-item" type="button">GBP</button>
+                            {{-- <button class="dropdown-item" type="button">GBP</button>
                                     <button class="dropdown-item" type="button">CAD</button> --}}
                             {{-- </div> --}}
                         </div>
@@ -477,6 +482,28 @@
         element.addEventListener('click', () => {
             dropdown.classList.toggle('show');
         })
+    });
+
+    $('#delivery_details').on('submit', function(e) {
+        e.preventDefault();
+        $.ajax({
+            type: "post",
+            url: "{{ route('city-address') }}",
+            data: {
+                input: $('#city_address').val();
+            },
+            dataType: "json",
+            success: function(response) {
+                let cities = response.cities;
+                $('#user_address').empty();
+
+                if (cities.length > 0) {
+                    cities.forEach(element => {
+                        $('#user_address').append(new Option(element.name, element.id, false, false));
+                    });
+                }
+            }
+        });
     })
 </script>
 

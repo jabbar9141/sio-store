@@ -43,6 +43,11 @@ Route::middleware(['auth', 'auth.role:admin'])
         Route::get('activate_product/{product_id}', 'productActivate')->name('activate-product');
         Route::post('modify-product/{product_id}', 'modifyProduct')->name('modify-product');
 
+        Route::get('country-list', 'country')->name('country-list');
+        Route::get('country-data', 'allCountriesData')->name('country-data');
+        Route::get('country-details/{id}', 'countryDetails')->name('country-details');
+        Route::post('shipping-cost/{id}', 'saveCost')->name('shipping-cost');
+
         //orders
         Route::get('allOrders', 'allOrders')->name('allOrders');
         Route::get('allOrdersData', 'allOrdersData')->name('allOrdersData');
@@ -76,21 +81,18 @@ Route::middleware(['auth', 'auth.role:admin'])
 
 
 
-    // Route::get('/add-currency',function(){
-    //     return view('backend.admin.currency.index');
-    // })->name('add-currency');
-    // Route::get('add-currency', [Curre:class])->name('list');
-    Route::get('add-currency', [CurrencyController::class,'index'])->name('add-currency');
+// Route::get('/add-currency',function(){
+//     return view('backend.admin.currency.index');
+// })->name('add-currency');
+// Route::get('add-currency', [Curre:class])->name('list');
+Route::get('add-currency', [CurrencyController::class, 'index'])->name('add-currency');
 
-  
 
 Route::delete('/currencies/{id}', [CurrencyController::class, 'destroy']);
 
-    Route::get('delete_currency', [CurrencyController::class,'destroy'])->name('delete_currency');
-    Route::post('/currencies/update', [CurrencyController::class, 'update']);
+Route::get('delete_currency', [CurrencyController::class, 'destroy'])->name('delete_currency');
+Route::post('/currencies/update', [CurrencyController::class, 'update']);
 
 
-    
-Route::post('store-curency', [CurrencyController::class,'store'])->name('store_currency');
 
-   
+Route::post('store-curency', [CurrencyController::class, 'store'])->name('store_currency');

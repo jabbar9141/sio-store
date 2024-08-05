@@ -7,6 +7,7 @@ use App\Mail\AddProductEmail;
 use App\Models\BrandModel;
 use App\Models\CategoryModel;
 use App\Models\Color;
+use App\Models\Country;
 use App\Models\Currency;
 use App\Models\Dimention;
 use App\Models\Location;
@@ -61,8 +62,10 @@ class ProductController extends Controller
         $colors = Color::all();
         $sizes = Size::all();
         $dimentions = Dimention::all();
+        $country = Country::where('name', 'like', (Auth::user()->currency->country ?? 'Italy'))->first();
+        $cities = $country->cities;
 
-        return view('backend.product.product_add', compact('brands', 'categories', 'colors', 'sizes', 'dimentions'));
+        return view('backend.product.product_add', compact('brands', 'categories', 'colors', 'sizes', 'dimentions', 'cities'));
     }
 
     /**

@@ -337,6 +337,10 @@ class HomeController extends Controller
         echo 1;
     }
 
+    public function countryList(Request $request)
+    {
+    }
+
     public function getInTouch(Request $request)
     {
 

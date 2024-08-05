@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Address;
 use App\Models\Cart;
+use App\Models\city;
+use App\Models\Currency;
 use App\Models\Location;
 use App\Models\product\ProductModel;
 use App\Models\ProductVariation;
@@ -91,14 +93,22 @@ class ShopOrderController extends Controller
 
     public function estimate_order_ship_cost(Request $request)
     {
+
         $request->validate([
             'country_iso_2' => 'required',
             'weights' => 'required'
         ]);
 
-        try {
+        // try {
             $country_iso = $request->country_iso_2;
             $weights = $request->weights ?? [];
+            $address_id = $request->address_id;
+
+            $address = Address::find($address_id);
+            $country = $address->getCountry();
+            $city = city::where('country_id', $country->id)->where('name', $address->city)->first();
+
+            dd($address,$country,$city);
 
             $euro_shipping_cost = ShippingCost::where('country_iso_2', $country_iso)->whereIn('weight', $weights)->sum('cost') ?? 0;
             $euro_shipping_plus_total = $request->euro_cart_total + $euro_shipping_cost;
@@ -182,10 +192,10 @@ class ShopOrderController extends Controller
             //     'shipping_costs' => $shipping_costs,
             //     'markup' => $markup,
             // ], 200);
-        } catch (Exception $e) {
-            Log::error($e->getMessage(), [$e]);
-            return response()->json(['err' => 'an error occurred while calculating shipping fees for the order'], 500);
-        }
+        // } catch (Exception $e) {
+        //     Log::error($e->getMessage(), [$e]);
+        //     return response()->json(['err' => 'an error occurred while calculating shipping fees for the order'], 500);
+        // }
     }
 
     public function submit(Request $request)
@@ -707,7 +717,9 @@ class ShopOrderController extends Controller
 
     public function createPayStackPayment($price, $order_id)
     {
-        $exchangeRate = $this->getExchangeRate();
+        // $exchangeRate = $this->getExchangeRate();
+        $currency = Currency::where('country', 'like', 'Nigeria')->first();
+        $exchangeRate = $currency->currency_rate ?? 1;
         // $formattedPrice = number_format($price, 2, '.', '');
         if ($exchangeRate) {
             $amountInNaira = ($price * $exchangeRate); // Amount in kobo

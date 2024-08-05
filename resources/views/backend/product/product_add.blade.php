@@ -226,7 +226,7 @@
                                         <label for="ships_from">Ships From <span class="text-danger">*</span></label>
                                         <select id="" class="form-control" name="ships_from" required>
                                             <option value="">Shipping Origin</option>
-                                            @foreach ($locs as $l)
+                                            @foreach ($cities as $l)
                                                 <option value="{{ $l->id }}">{{ $l->name }},
                                                     {{ $l->country_code }}</option>
                                             @endforeach
