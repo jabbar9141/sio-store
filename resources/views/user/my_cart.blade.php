@@ -1,5 +1,8 @@
 @php
     use App\Models\ProductVariation;
+    use App\Models\Country;
+    use App\Models\CityShippingCost;
+    use App\Models\ShippingCost;
 @endphp
 @extends('user.layout.app')
 @section('page_name', 'Shopping Cart')
@@ -28,6 +31,8 @@
                             <th>Products</th>
                             <th>Price</th>
                             <th>Quantity</th>
+                            <th>Weight</th>
+                            <th>Shipping</th>
                             <th>Total</th>
                             <th>Remove</th>
                         </tr>
@@ -37,6 +42,7 @@
                             @php
                                 $session_cart = session('cart');
                                 $cart_total = 0;
+                                $total_shipping_cost = 0;
                             @endphp
                             @foreach ($session_cart as $it)
                                 @php
@@ -47,6 +53,48 @@
                                         $price = $variation->price;
                                     } else {
                                         $price = $the_product->product_pricel;
+                                    }
+
+                                    $available_regions = json_decode($the_product->available_regions);
+
+                                    if ($the_product->vendor->user->currency) {
+                                        $vendor_country = Country::where(
+                                            'name',
+                                            'like',
+                                            $the_product->vendor->user->currency->country,
+                                        )->first();
+                                    } else {
+                                        $vendor_country = Country::where('name', 'like', 'Italy')->first();
+                                    }
+
+                                    if ($vendor_country->id == (int) session('country_id')) {
+                                        $city_percentage = CityShippingCost::where(
+                                            'city_id',
+                                            (int) session('city_id'),
+                                        )->first()?->percentage;
+                                        $total_shipping = ShippingCost::where('country_iso_2', $vendor_country->iso2)
+                                            ->where('weight', $variation->weight)
+                                            ->first()?->cost;
+                                        if ($city_percentage && $total_shipping) {
+                                            $shipping_cost = number_format(($city_percentage / $total_shipping) * 100, 2);
+                                        } else {
+                                            $shipping_cost = $total_shipping;
+                                        }
+                                    } elseif (in_array('global', $available_regions)) {
+                                        $shipping_cost = ShippingCost::where('country_iso_2', $vendor_country->iso2)
+                                            ->where('weight', $variation->weight)
+                                            ->first()?->cost;
+                                    } else {
+                                        $countries_origins = Country::whereIn('id', $available_regions)
+                                            ->pluck('id')
+                                            ->toArray();
+                                        if (in_array((int) session('country_id'), $countries_origins)) {
+                                            $shipping_cost = ShippingCost::where('country_iso_2', $vendor_country->iso2)
+                                                ->where('weight', $variation->weight)
+                                                ->first()?->cost;
+                                        } else {
+                                            $shipping_cost = 0;
+                                        }
                                     }
                                 @endphp
                                 <tr>
@@ -73,6 +121,18 @@
                                                 </button>
                                             </div> --}}
                                         </div>
+                                    </td>
+                                    <td>
+                                        @php
+                                            $weight = $it['qty'] * ($variation->weight ?? 1);
+                                        @endphp
+                                        {{ $weight }}
+                                    </td>
+                                    <td>
+                                        @php
+                                            $total_shipping_cost += number_format($shipping_cost * $it['qty'], 2);
+                                        @endphp
+                                        {{ App\MyHelpers::fromEuroView(session('currency_id', 0), number_format($shipping_cost * $it['qty'], 2)) }}
                                     </td>
                                     <td class="align-middle">
                                         @php
@@ -118,7 +178,8 @@
                             </div>
                             <div class="d-flex justify-content-between">
                                 <h6 class="font-weight-medium">Shipping</h6>
-                                <h6 class="font-weight-medium">Not added yet</h6>
+                                <h6 class="font-weight-medium">
+                                    {{ App\MyHelpers::fromEuroView(session('currency_id', 0), $total_shipping_cost) }}</h6>
                             </div>
                             <div class="d-flex justify-content-between">
                                 <h6 class="font-weight-medium">Discount</h6>
@@ -129,7 +190,7 @@
                         <div class="pt-2">
                             <div class="d-flex justify-content-between mt-2">
                                 <h5>Total</h5>
-                                <h5>{{ App\MyHelpers::fromEuroView(session('currency_id', 0), $cart_total) }}</h5>
+                                <h5>{{ App\MyHelpers::fromEuroView(session('currency_id', 0), number_format($cart_total + $total_shipping_cost, 2)) }}</h5>
                             </div>
                             <a href="{{ route('store.order.init') }}"
                                 class="btn btn-block btn-primary font-weight-bold my-3 py-3">Proceed To

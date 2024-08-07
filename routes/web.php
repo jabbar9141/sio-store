@@ -14,6 +14,7 @@ use App\Http\Controllers\ShopOrderController;
 use App\Http\Controllers\User\VendorController;
 use App\Http\Controllers\WishlistController;
 use App\Models\Announcement;
+use App\Models\city;
 use App\Models\Color;
 use App\Models\product\ProductModel;
 use App\Models\ProductVariation;
@@ -106,6 +107,7 @@ Route::get('/dashboard', [HomeController::class, 'dashboard'])->name('dashboard'
 Route::post('get-in-touch', [HomeController::class, 'getInTouch'])->name('get-in-touch');
 Route::post('subscriber', [HomeController::class, 'subscriber'])->name('subscriber');
 
+Route::get('/delivery-city/{country_id}',[HomeController::class, 'getCityByCOuntryId'])->name('delivery-city');
 
 
 //category

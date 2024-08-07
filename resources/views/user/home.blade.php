@@ -242,6 +242,9 @@
                                         $products = ProductModel::whereHas('variations', function ($query) {
                                             $query->where('product_quantity', '>', 0);
                                         })->where('category_id', $category->category_id)->where('admin_approved', 1)->where('product_status', 1)->orderBy('product_id', 'DESC')->limit(4)->get();
+
+                                        
+
                                         if ($products->count() > 0) {
                                             foreach ($products as $product) {
                                                 // dd($product);

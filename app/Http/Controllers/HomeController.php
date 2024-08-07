@@ -22,6 +22,7 @@ use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\Log;
 use App\Mail\ContactUsMail;
 use App\Mail\ContactWithVendorMail;
+use App\Models\city;
 use App\Models\Currency;
 use App\Models\ProductVariation;
 use App\Models\User;
@@ -415,5 +416,25 @@ class HomeController extends Controller
             'success' => true,
             'msg' => 'Contact with vendor mail was sent successfully',
         ]);
+    }
+
+    public function getCityByCOuntryId($country_id)
+    {
+        $cities = city::where('country_id', $country_id)->get();
+
+        return response()->json([
+            'success' => true,
+            'cities' => $cities,
+        ]);
+    }
+
+    public function saveDeliveryDetails(Request $request)
+    {
+        $request->validate([
+            'delivery_country' => 'required',
+            'delivery_city' => 'required',
+        ]);
+
+        
     }
 }

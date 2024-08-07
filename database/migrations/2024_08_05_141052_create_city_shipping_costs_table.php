@@ -19,6 +19,7 @@ return new class extends Migration
             $table->bigInteger('city_id');
             $table->integer('weight')->nullable();
             $table->float('cost')->nullable();
+            $table->float('percentage')->nullable();
             $table->timestamps();
         });
     }

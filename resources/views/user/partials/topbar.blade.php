@@ -72,19 +72,31 @@
                             <div class="modal-body">
                                 <form id="delivery_details">
                                     <div class="col-12">
-                                        <input type="text" id="city_address" class="form-control"
-                                            placeholder="City Ship To..." value="" autocomplete="off" autofocus>
+                                        @php
+                                            $countries = App\Models\Country::get();
+                                        @endphp
+                                        <select class="form-control w-100" name="delivery_country" id="delivery_country"
+                                            required>
+                                            <option value="">Select Country</option>
+                                            @foreach ($countries as $c)
+                                                <option value="{{ $c->id }}"
+                                                    {{ (int) session('country_id') == $c->id ? 'selected' : '' }}>
+                                                    {{ $c->name ?? $c->iso2 }}</option>
+                                            @endforeach
+                                        </select>
+                                        {{-- <input type="text" id="city_address" class="form-control"
+                                            placeholder="City Ship To..." value="" autocomplete="off" autofocus> --}}
                                     </div>
-                                    <div class="mt-2">
-                                        <button class="btn btn-primary">Search</button>
+                                    <div class="my-2 col-12">
+                                        <select name="delivery_city" id="delivery_city" required
+                                            class="w-100 form-control">
+                                            <option value="">Select City</option>
+                                        </select>
+                                    </div>
+                                    <div class="">
+                                        <button class="btn btn-primary">Submit</button>
                                     </div>
                                 </form>
-                                <div class="input-group input-group-sm" id="city_dropdown">
-                                    <select id="user_address" class="select2">
-                                        <option value=""></option>
-                                    </select>
-                                </div>
-
                                 <div id="location_suggestions"></div>
                             </div>
                         </div>
@@ -483,28 +495,6 @@
             dropdown.classList.toggle('show');
         })
     });
-
-    $('#delivery_details').on('submit', function(e) {
-        e.preventDefault();
-        $.ajax({
-            type: "post",
-            url: "{{ route('city-address') }}",
-            data: {
-                input: $('#city_address').val();
-            },
-            dataType: "json",
-            success: function(response) {
-                let cities = response.cities;
-                $('#user_address').empty();
-
-                if (cities.length > 0) {
-                    cities.forEach(element => {
-                        $('#user_address').append(new Option(element.name, element.id, false, false));
-                    });
-                }
-            }
-        });
-    })
 </script>
 
 

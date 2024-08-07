@@ -513,7 +513,10 @@ class AdminController extends Controller
             })
             ->addColumn('shipping_cost', function ($item) {
                 $shippingCost = CityShippingCost::where('city_id', $item->id)->where('country_id', $item->country_id)->first();
-                return ($shippingCost->cost ?? 'N/A');
+                if (isset($shippingCost->percentage) && $shippingCost->percentage > 0) {
+                    return $shippingCost->percentage . ' %';
+                }
+                return 'N/A';
             })
             // ->addColumn('price', function ($item) {
             //     return (($item->item ? ($item->item->product_price) : 'N/A'));
@@ -540,7 +543,7 @@ class AdminController extends Controller
 
             return response()->json([
                 'success' => true,
-                'shipping_cost' => $shippingCost->cost ?? 0
+                'shipping_percentage' => $shippingCost->percentage ?? 0
             ]);
         } else {
             return response()->json([
@@ -553,7 +556,7 @@ class AdminController extends Controller
     public function saveCost(Request $request, $id)
     {
         $request->validate([
-            'cost' => 'required|min:0',
+            'percentage' => 'required|min:0',
             // 'cities' => 'required',
             // 'weight' => 'required|min:0',
         ]);
@@ -570,7 +573,7 @@ class AdminController extends Controller
                 ], [
                     'country_id' => $country->id,
                     'city_id' => $city_id,
-                    'cost' => $request->cost,
+                    'percentage' => $request->percentage,
                 ]);
 
                 return response()->json([

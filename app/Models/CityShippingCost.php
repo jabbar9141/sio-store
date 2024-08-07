@@ -14,6 +14,7 @@ class CityShippingCost extends Model
         'city_id',
         'weight',
         'cost',
+        'percentage',
     ];
 
     public function country()

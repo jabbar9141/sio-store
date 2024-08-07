@@ -97,6 +97,13 @@
                                         $cart_total += $price * $it['qty'];
                                     @endphp
                                     <div class="d-flex justify-content-between">
+                                        <input type="hidden" class="product_ids" value="{{ $the_product->product_id }}">
+                                        <input type="hidden" class="product_quantitys" value="{{ $it['qty'] }}">
+                                        <input type="hidden" class="product_variation_ids"
+                                            value="{{ $variation->id ?? null }}">
+                                        <input type="hidden" class="product_weight"
+                                            value="{{ ($variation->weight ?? 1) * $it['qty'] }}">
+
                                         <p style="width: 75%">{{ $the_product->product_name }}
                                             {{-- ({{ json_encode($it['variations']) }}) --}}
                                             <b>x
@@ -106,7 +113,7 @@
                                             {{ App\MyHelpers::fromEuroView(session('currency_id', 0), $price * $it['qty']) }}
                                         </p>
                                         <p class="d-none"><span
-                                                class="weight product_weight">{{ ($variation->weight ?? 1) * $it['qty'] }}</span>
+                                                class="weight ">{{ ($variation->weight ?? 1) * $it['qty'] }}</span>
                                             Kg</p>
                                     </div>
                                 @endforeach
@@ -570,11 +577,37 @@
         function evaluateShipping(obj) {
             if ($(obj).is(':checked')) {
                 let country_iso_2 = $(obj).data('country-iso-2'),
-                    weight = [];
+                    weight = [],
+                    product_id = [],
+                    product_variation_id = [],
+                    product_quantity = [];
 
                 $.map($('.product_weight'), function(element, index) {
-                    return weight.push($(element).text());
+                    return weight.push(parseInt($(element).val()));
                 });
+
+                $.map($('.product_ids'), function(element, index) {
+                    return product_id.push(parseInt($(element).val()));
+                });
+
+                $.map($('.product_variation_ids'), function(element, index) {
+                    return product_variation_id.push(parseInt($(element).val()));
+                });
+
+                $.map($('.product_quantitys'), function(element, index) {
+                    return product_quantity.push(parseInt($(element).val()));
+                });
+
+                // Create the array of objects
+                let products = [];
+                for (let i = 0; i < product_id.length; i++) {
+                    products.push({
+                        product_id: product_id[i],
+                        product_variation_id: product_variation_id[i],
+                        weight: weight[i],
+                        product_quantity: product_quantity[i]
+                    });
+                }
 
                 let address = $(obj).val();
                 let address_id = $(obj).data('address-id');
@@ -591,9 +624,13 @@
                         method: 'GET',
                         data: {
                             country_iso_2: country_iso_2,
-                            weights: weight,
                             euro_cart_total: $('#euro_cart_total').val(),
                             address_id: address_id,
+                            products: JSON.stringify(products),
+                            // weights: weight,
+                            // product_id: product_id,
+                            // product_variation_id: product_variation_id,
+                            // product_quantity: product_quantity,
                             // order_id: order_id
                         },
                         success: function(response) {

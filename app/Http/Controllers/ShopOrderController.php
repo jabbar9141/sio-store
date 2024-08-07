@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Address;
 use App\Models\Cart;
 use App\Models\city;
+use App\Models\CityShippingCost;
+use App\Models\Country;
 use App\Models\Currency;
 use App\Models\Location;
 use App\Models\product\ProductModel;
@@ -93,105 +95,149 @@ class ShopOrderController extends Controller
 
     public function estimate_order_ship_cost(Request $request)
     {
-
         $request->validate([
             'country_iso_2' => 'required',
-            'weights' => 'required'
+            'products' => 'required'
         ]);
 
+        $products = $request->has('products') ? json_decode($request->products, true) : null;
+
+        $sum_shipping_cost = 0;
+
+        foreach ($products as $product) {
+            $product = ProductModel::find($product['product_id']);
+            if ($product) {
+                $first_variant = ProductVariation::find($product['product_variation_id']);
+                $available_regions = json_decode($product->available_regions);
+
+                // dd($product, json_decode($product->available_regions), in_array('global', $available_regions));
+
+                if ($product->vendor->user->currency) {
+                    $vendor_country = Country::where('name', 'like', $product->vendor->user->currency->country)->first();
+                } else {
+                    $vendor_country = Country::where('name', 'like', 'Italy')->first();
+                }
+
+                // dd($vendor_country->id ,$product->vendor->user->currency, (int)session('country_id'));
+
+                if ($vendor_country->id == (int)session('country_id')) {
+                    $city_percentage = CityShippingCost::where('city_id', (int)session('city_id'))->first()?->percentage;
+                    $total_shipping = ShippingCost::where('country_iso_2', $vendor_country->iso2)->where('weight', $first_variant->weight ?? 1)->first()?->cost;
+                    if ($city_percentage && $total_shipping) {
+                        $shipping_cost = number_format(($city_percentage / $total_shipping) * 100, 2);
+                    } else {
+                        $shipping_cost = $total_shipping;
+                    }
+                } elseif (in_array('global', $available_regions)) {
+                    $shipping_cost = ShippingCost::where('country_iso_2', $vendor_country->iso2)->where('weight', $first_variant->weight ?? 1)->first()?->cost;
+                } else {
+                    $countries_origins = Country::whereIn('id', $available_regions)->pluck('id')->toArray();
+                    if (in_array((int)session('country_id'), $countries_origins)) {
+                        $shipping_cost = ShippingCost::where('country_iso_2', $vendor_country->iso2)->where('weight', $first_variant->weight ?? 1)->first()?->cost;
+                    } else {
+                        $shipping_cost = 0;
+                    }
+                }
+                $sum_shipping_cost += $shipping_cost;
+            }
+        }
+
+        // dd($sum_shipping_cost);
+
+
         // try {
-            $country_iso = $request->country_iso_2;
-            $weights = $request->weights ?? [];
-            $address_id = $request->address_id;
+        // $country_iso = $request->country_iso_2;
+        // $weights = $request->weights ?? [];
+        // $address_id = $request->address_id;
 
-            $address = Address::find($address_id);
-            $country = $address->getCountry();
-            $city = city::where('country_id', $country->id)->where('name', $address->city)->first();
+        // $address = Address::find($address_id);
+        // $country = $address->getCountry();
+        // $city = city::where('country_id', $country->id)->where('name', $address->city)->first();
 
-            dd($address,$country,$city);
+        // // dd($address,$country,$city);
 
-            $euro_shipping_cost = ShippingCost::where('country_iso_2', $country_iso)->whereIn('weight', $weights)->sum('cost') ?? 0;
-            $euro_shipping_plus_total = $request->euro_cart_total + $euro_shipping_cost;
-            $euro_cart_total = MyHelpers::fromEuroView(session('currency_id', 0), $request->euro_cart_total);
+        // $euro_shipping_cost = ShippingCost::where('country_iso_2', $country_iso)->whereIn('weight', $weights)->sum('cost') ?? 0;
+        // $euro_shipping_plus_total = $request->euro_cart_total + $euro_shipping_cost;
+        // $euro_cart_total = MyHelpers::fromEuroView(session('currency_id', 0), $request->euro_cart_total);
 
-            $shipping_cost = MyHelpers::fromEuroView(session('currency_id', 0), $euro_shipping_cost);
-            $shipping_plus_total = MyHelpers::fromEuroView(session('currency_id', 0), $euro_shipping_plus_total);
-
-
-            return response()->json([
-                'success' => $shipping_cost > 0 ? true : false,
-                'shipping_cost' => $shipping_cost,
-                'shipping_plus_total' => $shipping_plus_total,
-                'euro_shipping_cost' => $euro_shipping_cost,
-                'euro_shipping_plus_total' => $euro_shipping_plus_total,
-                'message' => $shipping_cost > 0 ? 'Success' : 'Error Calculating Shipping Cost',
-            ]);
+        // $shipping_cost = MyHelpers::fromEuroView(session('currency_id', 0), $euro_shipping_cost);
+        // $shipping_plus_total = MyHelpers::fromEuroView(session('currency_id', 0), $euro_shipping_plus_total);
 
 
-            // $destination = Address::find($request->get('address_id'));
-            // $o = ShopOrder::where('id', $request->get('order_id'))->first();
+        return response()->json([
+            'success' => $shipping_cost > 0 ? true : false,
+            'shipping_cost' => $sum_shipping_cost,
+            'shipping_plus_total' => $sum_shipping_cost,
+            'euro_shipping_cost' => $sum_shipping_cost,
+            'euro_shipping_plus_total' => $sum_shipping_cost,
+            'message' => $shipping_cost > 0 ? 'Success' : 'Error Calculating Shipping Cost',
+        ]);
 
-            // $items = $o->items;
-            // $shipping_costs = []; // Initialize array to store shipping costs for each provider
 
-            // foreach ($items as $item) {
-            //     $product = ProductModel::where('product_id', $item->item_id)->first();
-            //     if (null != $product->ships_from) {
-            //         $origin = Location::find($product->ships_from);
-            //         $shipping_data = [
-            //             "width" => $product->width,
-            //             "height" => $product->height,
-            //             "weight" => $product->weight,
-            //             "length" => $product->length,
-            //             "count" => $item->qty,
-            //             "item_desc" => substr($product->product_name, 0, 24),
-            //             "item_value" => $item->price ?? $item->variation->price, // changed ($item->price ?? $product->product_price,) to ($item->price ?? $item->variation->price,)
-            //             "origin_city" => $origin->name,
-            //             "dest_city" => $destination->city,
-            //             "origin_zip" => $origin->zip,
-            //             "dest_zip" => $destination->zip,
-            //             "origin_country" => $origin->country_code,
-            //             "dest_country" => $destination->country
-            //         ];
+        // $destination = Address::find($request->get('address_id'));
+        // $o = ShopOrder::where('id', $request->get('order_id'))->first();
 
-            //         $shipping_cost = ProductController::estimate_shipping($shipping_data);
-            //         $shipping_cost = ((array) json_decode($shipping_cost));
+        // $items = $o->items;
+        // $shipping_costs = []; // Initialize array to store shipping costs for each provider
 
-            //         // Accumulate shipping costs for each provider
-            //         foreach ($shipping_cost as $provider => $cost) {
-            //             if (isset($shipping_costs[$provider])) {
-            //                 $shipping_costs[$provider] += (($cost != '') ? $cost : 0);
-            //             } else {
-            //                 $shipping_costs[$provider] = (($cost != '') ? $cost : 0);
-            //             }
-            //         }
-            //     }
-            // }
-            // //save the estimation in the db
-            // $o->shipping_cost = $shipping_costs;
-            // $o->save();
+        // foreach ($items as $item) {
+        //     $product = ProductModel::where('product_id', $item->item_id)->first();
+        //     if (null != $product->ships_from) {
+        //         $origin = Location::find($product->ships_from);
+        //         $shipping_data = [
+        //             "width" => $product->width,
+        //             "height" => $product->height,
+        //             "weight" => $product->weight,
+        //             "length" => $product->length,
+        //             "count" => $item->qty,
+        //             "item_desc" => substr($product->product_name, 0, 24),
+        //             "item_value" => $item->price ?? $item->variation->price, // changed ($item->price ?? $product->product_price,) to ($item->price ?? $item->variation->price,)
+        //             "origin_city" => $origin->name,
+        //             "dest_city" => $destination->city,
+        //             "origin_zip" => $origin->zip,
+        //             "dest_zip" => $destination->zip,
+        //             "origin_country" => $origin->country_code,
+        //             "dest_country" => $destination->country
+        //         ];
 
-            // $markup = '';
-            // if (count($shipping_costs) > 0) {
-            //     foreach ($shipping_costs as $provider => $cost) {
-            //         if ($cost > 0) {
-            //             $provider_upper = strtoupper($provider);
-            //             $markup .= '
-            //                 <div class="form-check">
-            //                     <input class="form-check-input" type="radio" name="shipping_provider" id="' . $provider . '" onchange="calculate_total(this)"
-            //                         value="' . $provider_upper . '" data-cost="' . $cost . '" required>
-            //                     <label class="form-check-label" for="' . $provider . '">' . $provider_upper . ' - ' . MyHelpers::fromEuro(Auth::user()->currency_id, $cost) . '</label>
-            //                 </div>
-            //             ';
-            //         }
-            //     }
-            // }
+        //         $shipping_cost = ProductController::estimate_shipping($shipping_data);
+        //         $shipping_cost = ((array) json_decode($shipping_cost));
 
-            // // Output the cumulative shipping costs for each provider
-            // return response()->json([
-            //     'shipping_costs' => $shipping_costs,
-            //     'markup' => $markup,
-            // ], 200);
+        //         // Accumulate shipping costs for each provider
+        //         foreach ($shipping_cost as $provider => $cost) {
+        //             if (isset($shipping_costs[$provider])) {
+        //                 $shipping_costs[$provider] += (($cost != '') ? $cost : 0);
+        //             } else {
+        //                 $shipping_costs[$provider] = (($cost != '') ? $cost : 0);
+        //             }
+        //         }
+        //     }
+        // }
+        // //save the estimation in the db
+        // $o->shipping_cost = $shipping_costs;
+        // $o->save();
+
+        // $markup = '';
+        // if (count($shipping_costs) > 0) {
+        //     foreach ($shipping_costs as $provider => $cost) {
+        //         if ($cost > 0) {
+        //             $provider_upper = strtoupper($provider);
+        //             $markup .= '
+        //                 <div class="form-check">
+        //                     <input class="form-check-input" type="radio" name="shipping_provider" id="' . $provider . '" onchange="calculate_total(this)"
+        //                         value="' . $provider_upper . '" data-cost="' . $cost . '" required>
+        //                     <label class="form-check-label" for="' . $provider . '">' . $provider_upper . ' - ' . MyHelpers::fromEuro(Auth::user()->currency_id, $cost) . '</label>
+        //                 </div>
+        //             ';
+        //         }
+        //     }
+        // }
+
+        // // Output the cumulative shipping costs for each provider
+        // return response()->json([
+        //     'shipping_costs' => $shipping_costs,
+        //     'markup' => $markup,
+        // ], 200);
         // } catch (Exception $e) {
         //     Log::error($e->getMessage(), [$e]);
         //     return response()->json(['err' => 'an error occurred while calculating shipping fees for the order'], 500);

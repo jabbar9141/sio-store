@@ -159,8 +159,43 @@
     <script>
         $(document).ready(function() {
             $('.select2').select2();
-
         });
+
+        @if (session('country_id'))
+            getCities({{ (int) session('country_id') }})
+        @endif
+
+        $('#delivery_country').on('change', function() {
+            console.log(this.value);
+            if (this.value) {
+                getCities(this.value)
+            }
+        });
+
+        function getCities(country_id) {
+            $.ajax({
+                type: "get",
+                url: "{{ route('delivery-city', ['country_id' => ':id']) }}".replace(':id', country_id),
+                data: "",
+                dataType: "json",
+                success: function(response) {
+                    let cities = response.cities;
+                    $('#delivery_city').empty();
+                    $('#delivery_city').append(new Option('Select City', '', true, false));
+                    if (cities.length > 0) {
+                        cities.forEach(city => {
+                            $('#delivery_city').append(new Option(city.name, city.id, false,
+                                false));
+                        });
+                        @if (session('country_id'))
+                            let session_city_id = '{{ session('city_id') }}'
+                            $('#delivery_city').val(session_city_id).prop('selected', true).trigger(
+                                'change');
+                        @endif
+                    }
+                }
+            });
+        }
 
         $(document).ready(function() {
             function fetchLocations(query, suggestionsContainer) {

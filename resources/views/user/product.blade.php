@@ -458,9 +458,11 @@
 
 
 
-                            <h6>Shipping fees</h6>
+                            <h6 id="shipping_cost_view" data-euro-shipping="{{ $shipping_cost }}">Shipping Fees:
+                                <b>{{ $shipping_cost > 0 ? App\MyHelpers::fromEuroView(session('currency_id', 0), $shipping_cost) : 'Shipping Cost not avilable for your sellected location' }}</b>
+                            </h6>
 
-                            @php
+                            {{-- @php
 
                                 $shipping_cost = ((array) json_decode($shipping_cost));
 
@@ -492,7 +494,7 @@
                             @else
                                 Shipping Cost not avilable for your sellected location
 
-                            @endif
+                            @endif --}}
 
 
 
@@ -1233,6 +1235,8 @@
                             $("#productPrice").empty();
                             $("#productPrice").text("Quantity Not Available");
                         }
+                        $('#shipping_cost_view').data('euro-shipping', response.shipping_cost_in_euro);
+                        $('#shipping_cost_view').text(response.shipping_cost);
                         $('#ProductVideo').hide();
                     } else {
                         $("#ProductImage").attr("src", '');

@@ -53,8 +53,8 @@
                         @csrf
                         <input type="hidden" name="city_id">
                         <div class="col-12 mb-3">
-                            <label for="cost">Shipping Cost</label>
-                            <input type="number" name="cost" id="shipping_cost" class="form-control" min="0"
+                            <label for="percentage">Shipping Percentage</label>
+                            <input type="number" name="percentage" id="shipping_percentage" class="form-control" min="0"
                                 step="0.01" required>
                         </div>
 
@@ -91,7 +91,7 @@
                 success: function(response) {
                     if (response.success) {
                         $('input[name="city_id"]').val(city_id);
-                        $('#shipping_cost').val(response.shipping_cost ?? 0);
+                        $('#shipping_percentage').val(response.shipping_percentage ?? 0);
                         // $('#shipping_cost_modal').modal('show');
                         myModal.show();
 
