@@ -46,7 +46,9 @@ Route::middleware(['auth', 'auth.role:admin'])
         Route::get('country-list', 'country')->name('country-list');
         Route::get('country-data', 'allCountriesData')->name('country-data');
         Route::get('country-details/{id}', 'countryDetails')->name('country-details');
+        Route::get('city-list/{country_id}', 'cityList')->name('city-list');
         Route::post('shipping-cost/{id}', 'saveCost')->name('shipping-cost');
+        Route::get('city-cost/{id}', 'cityCost')->name('city-cost');
 
         //orders
         Route::get('allOrders', 'allOrders')->name('allOrders');

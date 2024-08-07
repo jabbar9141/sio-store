@@ -13,14 +13,17 @@ use Illuminate\Support\Facades\Notification;
 use App\Http\Controllers\Controller;
 use App\Models\BrandModel;
 use App\Models\CategoryModel;
+use App\Models\city;
 use App\Models\CityShippingCost;
 use App\Models\Country;
 use App\Models\product\ProductModel;
 use App\Models\product\ProductOffersModel;
+use App\Models\ShippingCost;
 use App\Models\ShopOrder;
 use App\Models\ShopOrderItem;
 use App\Models\ShopOrderPayment;
 use App\Models\VendorShop;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Yajra\DataTables\Facades\DataTables;
 use Illuminate\Support\Facades\Hash;
@@ -440,7 +443,7 @@ class AdminController extends Controller
 
     public function allCountriesData()
     {
-        $items = Country::get();
+        $items = Country::with('shippingCosts')->get();
 
         // dd($items);
 
@@ -455,9 +458,17 @@ class AdminController extends Controller
             ->addColumn('iso2', function ($item) {
                 return (($item->iso2 ?? 'N/A'));
             })
-            // ->addColumn('price', function ($item) {
-            //     return (($item->item ? ($item->item->product_price) : 'N/A'));
-            // })
+            ->addColumn('shipping_cost', function ($item) {
+                if ($item->shippingCosts && count($item->shippingCosts) > 0) {
+                    // Return the minimum cost if available
+                    $minCost = $item->shippingCosts->whereNotNull('cost')->min('cost');
+                    return $minCost ?? 0;
+                } else {
+                    $shippingCost = ShippingCost::where('country_iso_2', $item->iso2)->whereNotNull('cost');
+                    return ($shippingCost->min('cost') ?? 0) . ' - ' . ($shippingCost->max('cost') ?? 0);
+                }
+                // return (($item->item ? ($item->item->product_price) : 'N/A'));
+            })
             // ->addColumn('order_id', function ($item) {
             //     return (($item->item ? ($item->order->order_id) : 'N/A'));
             // })
@@ -468,7 +479,7 @@ class AdminController extends Controller
                 $url = route('admin-country-details', $item->id);
                 return '<a href="' . $url . '" class="btn btn-info btn-sm" ><i class="fa fa-eye"></i> View</a>';
             })
-            ->rawColumns(['action'])
+            ->rawColumns(['action', 'shipping_cost'])
             ->make(true);
     }
 
@@ -486,61 +497,94 @@ class AdminController extends Controller
         return view('backend/admin/country-details', $data);
     }
 
+    public function cityList($country_id)
+    {
+        $items = city::where('country_id', $country_id)->get();
+
+        // dd($items);
+
+        return DataTables::of($items)
+            ->addIndexColumn()
+            // ->addColumn('order_id', function ($item) {
+            //     return ($item->order ? ($item->order->order_id) : 'N/A');
+            // })
+            ->addColumn('name', function ($item) {
+                return ($item->name ?? 'N/A');
+            })
+            ->addColumn('shipping_cost', function ($item) {
+                $shippingCost = CityShippingCost::where('city_id', $item->id)->where('country_id', $item->country_id)->first();
+                return ($shippingCost->cost ?? 'N/A');
+            })
+            // ->addColumn('price', function ($item) {
+            //     return (($item->item ? ($item->item->product_price) : 'N/A'));
+            // })
+            // ->addColumn('order_id', function ($item) {
+            //     return (($item->item ? ($item->order->order_id) : 'N/A'));
+            // })
+            // ->addColumn('status', function ($item) {
+            //     return $item->status;
+            // })
+            ->addColumn('action', function ($item) {
+
+                return '<a href="javascript:void(0)" onclick="addShippingCost(' . $item->id . ')" class="btn btn-info btn-sm" ><i class="fa fa-eye"></i> View</a>';
+            })
+            ->rawColumns(['action'])
+            ->make(true);
+    }
+
+    public function cityCost($city_id)
+    {
+        $city = city::find($city_id);
+        if ($city) {
+            $shippingCost = CityShippingCost::where('city_id', $city_id)->where('country_id', $city->country_id)->first();
+
+            return response()->json([
+                'success' => true,
+                'shipping_cost' => $shippingCost->cost ?? 0
+            ]);
+        } else {
+            return response()->json([
+                'success' => false,
+                'message' => 'City not found'
+            ]);
+        }
+    }
+
     public function saveCost(Request $request, $id)
     {
         $request->validate([
-            'cities' => 'required',
             'cost' => 'required|min:0',
-            'weight' => 'required|min:0',
+            // 'cities' => 'required',
+            // 'weight' => 'required|min:0',
         ]);
 
-        $country = Country::find($id);
-
-        if ($request->cities == 'all') {
-            $country->cities;
-
-            foreach ($country->cities as $city) {
+        return DB::transaction(function () use ($id, $request) {
+            $country = Country::find($id);
+            $city_id = (int)$request->city_id;
+            if ($request->city_id) {
                 $shippingCost = new CityShippingCost();
 
                 $shippingCost->updateOrCreate([
                     'country_id' => $country->id,
-                    'city_id' => $city->id,
+                    'city_id' => $city_id,
                 ], [
                     'country_id' => $country->id,
+                    'city_id' => $city_id,
                     'cost' => $request->cost,
-                    'weight' => $request->weight ?? null,
-                    'city_id' => $city->id,
                 ]);
-                // $shippingCost->country_id = $country->id;
-                // $shippingCost->cost = $request->cost;
-                // $shippingCost->weight = $request->weight;
-                // $shippingCost->city_id = $city->id;
-                // $shippingCost->save();
 
-            }
-            return redirect()->back()->withSuccess('Data Saved Successfully');
-        } elseif ($request->cities !== 'all') {
-            foreach ($request->cities as $city) {
-                $shippingCost = new CityShippingCost();
-                $shippingCost->updateOrCreate([
-                    'country_id' => $country->id,
-                    'city_id' => $city->id,
-                ], [
-                    'country_id' => $country->id,
-                    'cost' => $request->cost,
-                    'weight' => $request->weight ?? null,
-                    'city_id' => $city->id,
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Data Saved Successfully'
                 ]);
-                // $shippingCost->country_id = $country->id;
-                // $shippingCost->cost = $request->cost;
-                // $shippingCost->weight = $request->weight;
-                // $shippingCost->city_id = $city->id;
-                // $shippingCost->save();
+            } else {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Something went wrong'
+                ]);
+                return redirect()->back()->withErrors('If Selecting individual cities, please unselect All Cities options');
             }
-            return redirect()->back()->withSuccess('Data Saved Successfully');
-        } else {
-            return redirect()->back()->withErrors('If Selecting individual cities, please unselect All Cities options');
-        }
+        });
     }
 
     public function showAllOrders($order_item_id)

@@ -3,33 +3,30 @@
 
 
 @section('content')
-<!--breadcrumb -->
-<div class="page-breadcrumb d-none d-sm-flex align-items-center mb-3">
-    <div class="breadcrumb-title pe-3">Country</div>
-    <div class="ps-3">
-        <nav aria-label="breadcrumb">
-            <ol class="breadcrumb mb-0 p-0">
-                <li class="breadcrumb-item"><a href="dashboard"><i class="bx bx-home-alt"></i></a>
-                </li>
-                <li class="breadcrumb-item active" aria-current="page">Country List</li>
-            </ol>
-        </nav>
+    <!--breadcrumb -->
+    <div class="page-breadcrumb d-none d-sm-flex align-items-center mb-3">
+        <div class="breadcrumb-title pe-3">Country</div>
+        <div class="ps-3">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-0 p-0">
+                    <li class="breadcrumb-item"><a href="dashboard"><i class="bx bx-home-alt"></i></a>
+                    </li>
+                    <li class="breadcrumb-item active" aria-current="page">Country List</li>
+                </ol>
+            </nav>
+        </div>
     </div>
-</div>
-<!--end breadcrumb -->
-    <div class="container">
-        <div class="row">
+    <!--end breadcrumb -->
+    <div class="card">
+        <div class="card-body row">
             <div class="col-12">
                 <div class="table-responsive">
                     <table class="table" id="countries_table">
                         <thead>
                             <th>#</th>
-                            {{-- <th>Order Id</th> --}}
                             <th>Name</th>
                             <th>ISO 2</th>
-                            {{-- <th>Shipping Cost(Min-Max)(&euro;)</th>
-                            <th>Price(&euro;)</th>
-                            <th>Status</th> --}}
+                            <th>Shipping Cost(Min-Max) (&euro;)</th>
                             <th>Action</th>
                         </thead>
                     </table>
@@ -64,9 +61,9 @@
                 {
                     "data": "iso2"
                 },
-                // {
-                //     "data": "customer"
-                // },
+                {
+                    "data": "shipping_cost"
+                },
                 // {
                 //     "data": "vendor"
                 // },
