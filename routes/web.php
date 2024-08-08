@@ -16,6 +16,7 @@ use App\Http\Controllers\WishlistController;
 use App\Models\Announcement;
 use App\Models\city;
 use App\Models\Color;
+use App\Models\Location;
 use App\Models\product\ProductModel;
 use App\Models\ProductVariation;
 use App\Models\ShippingCost;
@@ -71,9 +72,19 @@ Route::get('/product-script', function () {
 });
 
 Route::get('/latest-migrations', function () {
-    Artisan::call('migrate', [
-        '--path' => 'database/migrations/2024_08_08_092430_remove_columns_from_products_table.php'
-    ]);
+    // Artisan::call('migrate', [
+    //     '--path' => 'database/migrations/2024_08_08_092430_remove_columns_from_products_table.php'
+    // ]);
+
+    $products = ProductModel::get();
+    foreach ($products as $key => $product) {
+        $location = Location::where('id', $product->ships_from)->first();
+        $city = city::where('name', $location->name)->first();
+
+        $product->update([
+            'ships_from' => $city->id,
+        ]);
+    }
 });
 
 Route::get('/null-variations', function () {

@@ -1035,7 +1035,7 @@ class ProductController extends Controller
                 $city_percentage = CityShippingCost::where('city_id', (int)session('city_id'))->first()?->percentage;
                 $total_shipping = ShippingCost::where('country_iso_2', $vendor_country->iso2)->where('weight', $first_variant->weight)->first()?->cost;
                 if ($city_percentage && $total_shipping) {
-                    $shipping_cost = number_format(($city_percentage / $total_shipping) * 100, 2);
+                    $shipping_cost = number_format(($city_percentage * $total_shipping) / 100, 2);
                 } else {
                     $shipping_cost = $total_shipping;
                 }
@@ -1248,7 +1248,7 @@ class ProductController extends Controller
                 $city_percentage = CityShippingCost::where('city_id', (int)session('city_id'))->first()?->percentage;
                 $total_shipping = ShippingCost::where('country_iso_2', $vendor_country->iso2)->where('weight', $productVariation->weight)->first()?->cost;
                 if ($city_percentage && $total_shipping) {
-                    $shipping_cost = number_format(($city_percentage / $total_shipping) * 100, 2);
+                    $shipping_cost = number_format(($city_percentage * $total_shipping) / 100, 2);
                 } else {
                     $shipping_cost = $total_shipping;
                 }

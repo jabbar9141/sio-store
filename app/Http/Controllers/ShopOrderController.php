@@ -101,6 +101,7 @@ class ShopOrderController extends Controller
         ]);
 
         $products = $request->has('products') ? json_decode($request->products, true) : null;
+        $country = Country::where('iso2', $request->country_iso_2)->first();
 
         $sum_shipping_cost = 0;
 
@@ -124,11 +125,11 @@ class ShopOrderController extends Controller
 
                 // dd($vendor_country->id ,$product->vendor->user->currency, (int)session('country_id'));
 
-                if ($vendor_country->id == (int)session('country_id')) {
+                if ($vendor_country->id == $country->id) {
                     $city_percentage = CityShippingCost::where('city_id', (int)session('city_id'))->first()?->percentage;
                     $total_shipping = ShippingCost::where('country_iso_2', $vendor_country->iso2)->where('weight', $request_product_weight)->first()?->cost;
                     if ($city_percentage && $total_shipping) {
-                        $shipping_cost = number_format(($city_percentage / $total_shipping) * 100, 2);
+                        $shipping_cost = number_format(($city_percentage * $total_shipping) / 100, 2);
                     } else {
                         $shipping_cost = $total_shipping;
                     }
@@ -136,7 +137,7 @@ class ShopOrderController extends Controller
                     $shipping_cost = ShippingCost::where('country_iso_2', $vendor_country->iso2)->where('weight', $request_product_weight)->first()?->cost;
                 } else {
                     $countries_origins = Country::whereIn('id', $available_regions)->pluck('id')->toArray();
-                    if (in_array((int)session('country_id'), $countries_origins)) {
+                    if (in_array($country->id, $countries_origins)) {
                         $shipping_cost = ShippingCost::where('country_iso_2', $vendor_country->iso2)->where('weight', $request_product_weight)->first()?->cost;
                     } else {
                         $shipping_cost = 0;

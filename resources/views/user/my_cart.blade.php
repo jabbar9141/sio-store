@@ -82,7 +82,7 @@
                                             ->first()?->cost;
                                         if ($city_percentage && $total_shipping) {
                                             $shipping_cost = number_format(
-                                                ($city_percentage / $total_shipping) * 100,
+                                                ($city_percentage * $total_shipping) / 100,
                                                 2,
                                             );
                                         } else {
