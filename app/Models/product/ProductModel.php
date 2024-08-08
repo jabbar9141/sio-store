@@ -4,6 +4,7 @@ namespace App\Models\product;
 
 use App\Models\BrandModel;
 use App\Models\CategoryModel;
+use App\Models\city;
 use App\Models\Location;
 use App\Models\ProductReview;
 use App\Models\SubCategoryModel;
@@ -66,7 +67,8 @@ class ProductModel extends Model
 
     public function origin()
     {
-        return $this->belongsTo(Location::class, 'ships_from', 'id');
+        // return $this->belongsTo(Location::class, 'ships_from', 'id');
+        return $this->belongsTo(city::class, 'ships_from', 'id');
     }
 
     public function offers()

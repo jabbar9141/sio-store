@@ -14,7 +14,7 @@ return new class extends Migration
     public function up()
     {
         Schema::table('product', function (Blueprint $table) {
-            $table->dropForeign('ships_from');
+            $table->dropForeign('product_ships_from_foreign');
         });
     }
 

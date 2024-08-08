@@ -211,10 +211,10 @@ class ProductController extends Controller
                         ->orderBy('product_id', 'desc')
                         ->limit(12)
                         ->get();
-                    foreach ($users as $user) {
-                        Mail::to($user->email)->send(new AddProductEmail($product, $products));
-                    }
-                    Mail::to('support@siostore.eu')->send(new AddProductEmail($product, $products));
+                    // foreach ($users as $user) {
+                    //     Mail::to($user->email)->send(new AddProductEmail($product, $products));
+                    // }
+                    // Mail::to('support@siostore.eu')->send(new AddProductEmail($product, $products));
 
                     return response(['msg' => 'Product is added successfully.'], 200);
                 } else return redirect('add_product')->with('error', 'Failed to add this product, try again.');
