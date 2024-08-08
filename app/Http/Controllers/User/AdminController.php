@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Notification;
 use App\Http\Controllers\Controller;
+use App\Models\Address;
 use App\Models\BrandModel;
 use App\Models\CategoryModel;
 use App\Models\city;
@@ -61,24 +62,42 @@ class AdminController extends Controller
     public function userRemove(Request $request)
     {
         try {
-            $user = User::findOrFail($request->id);
+            return DB::transaction(function () use ($request) {
+                $user = User::findOrFail($request->id);
+                $vendor = $user->vendor_shop;
+                if ($vendor) {
+                    $products = $vendor->products;
+                    if (count($products) > 0) {
+                        foreach ($products as $product) {
+                            $product->offers()->delete();
+                            $product->variations()->delete();
+                            $product->images()->delete();
+                            $product->reviews()->delete();
 
-            if ($user->photo) {
-                MyHelpers::deleteImageFromStorage($user->photo, 'uploads/images/profile/');
-            }
-            if ($user->delete())
-                return response()->json(
-                    [
-                        'msg' => "User deleted successfully",
-                        'success' => true,
-                    ]
-                );
-            // return redirect()->route('admin-vendor-list')->with('success', 'Successfully removed.');
-            else
-                return response()->json([
-                    'msg' => "Something went wrong",
-                    'success' => false,
-                ]);
+                            $product->delete();
+                        }
+                    }
+                    $vendor->delete();
+                }
+                if ($user->photo) {
+                    MyHelpers::deleteImageFromStorage($user->photo, 'uploads/images/profile/');
+                }
+                $user->cart()->delete();
+                Address::where('user_id', $user->id)->delete();
+                if ($user->delete())
+                    return response()->json(
+                        [
+                            'msg' => "User deleted successfully",
+                            'success' => true,
+                        ]
+                    );
+                // // return redirect()->route('admin-vendor-list')->with('success', 'Successfully removed.');
+                else
+                    return response()->json([
+                        'msg' => "Something went wrong",
+                        'success' => false,
+                    ]);
+            });
 
             // return redirect('admin-vendor-list')->with('error', 'Failed to remove this user.');
         } catch (ModelNotFoundException $exception) {

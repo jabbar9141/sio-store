@@ -213,7 +213,7 @@ Route::get('cancel/payment/{order_id}', [ShopOrderController::class, 'cancel'])-
 Route::get('success/payment/{order_id}', [ShopOrderController::class, 'success'])->name('success.payment');
 Route::get('success/paystack-payment/{order_id}', [ShopOrderController::class, 'successPaystack'])->name('success.paystack-payment');
 
-Route::get('/paystack/callback/{order_id}', [ShopOrderController::class, 'payStackCallback'])->name('paystack.callback');
+Route::get('/paystack/callback', [ShopOrderController::class, 'payStackCallback'])->name('paystack.callback');
 
 Route::post('city-address', function (Request $request) {
     $cities = App\Models\city::where('name', 'like', $request->input)->get();

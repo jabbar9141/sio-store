@@ -139,7 +139,7 @@
                                 </td>
                                 <td>
                                     <div class="d-flex order-actions">
-                                        <a href="#" onclick="deleteVendor('{{ $item->id }}')">
+                                        <a href="javascript:void(0)" onclick="deleteVendor('{{ $item->id }}')">
                                             <i class='bx bxs-trash'></i>
                                         </a>
                                     </div>

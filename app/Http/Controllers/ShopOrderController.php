@@ -774,7 +774,7 @@ class ShopOrderController extends Controller
             $response = Http::withToken(env('PAYSTACK_SECRET_KEY'))->post('https://api.paystack.co/transaction/initialize', [
                 'email' => Auth::user()->email,
                 'amount' => $formattedPrice * 100,
-                'callback_url' => 'https://www.siostore.eu/', // route('paystack.callback', ['order_id' => $order_id])
+                'callback_url' => 'https://www.siostore.eu/paystack.callback/?order_id='.$order_id, // route('paystack.callback', ['order_id' => $order_id])
             ]);
 
             $data = $response->json();
@@ -799,9 +799,10 @@ class ShopOrderController extends Controller
         }
     }
 
-    public function payStackCallback(Request $request, $order_id)
+    public function payStackCallback(Request $request)
     {
         $reference = $request->query('reference');
+        $order_id = $request->query('order_id');
 
         $response = Http::withToken(env('PAYSTACK_SECRET_KEY'))->get("https://api.paystack.co/transaction/verify/{$reference}");
 
