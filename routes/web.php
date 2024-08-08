@@ -50,25 +50,6 @@ Route::get('/clear-cache-every', function () {
     return 'Cache cleared';
 });
 
-// Route::get('/make-model', function () {
-//     // Generate the model and migration
-//     $exitCode = Artisan::call('make:migration', [
-//         'name' => 'add_column_quantity_in_product_variation',
-//     ]);
-
-//     return "Model and migration created successfully";
-// });
-
-// Route::get('/make-model-migration', function () {
-//     // Generate the model and migration
-//     $exitCode = Artisan::call('make:model', [
-//         'name' => 'Country',
-//         '-m' => true,
-//     ]);
-
-//     return "Model and migration created successfully";
-// });
-
 Route::get('/product-script', function () {
     $all_products = ProductModel::get();
     foreach ($all_products as $key => $product) {
@@ -89,34 +70,9 @@ Route::get('/product-script', function () {
     }
 });
 
-// Route::get('/add-product-columns', function () {
-//     Artisan::call('migrate', [
-//         '--path' => 'database/migrations/2024_08_02_152948_add_columns_in_product_table.php'
-//     ]);
-// });
-
 Route::get('/latest-migrations', function () {
-    echo 'City Table Migration.<br>';
     Artisan::call('migrate', [
-        '--path' => 'database/migrations/2024_08_04_200918_create_cities_table.php'
-    ]);
-    echo 'Country Table Migration<br>';
-    Artisan::call('migrate', [
-        '--path' => 'database/migrations/2024_08_04_202409_create_countries_table.php'
-    ]);
-    echo 'City Shipping Cost Table Migration<br>';
-    Artisan::call('migrate', [
-        '--path' => 'database/migrations/2024_08_05_141052_create_city_shipping_costs_table.php'
-    ]);
-
-    echo 'Running Seeders <br>';
-    echo 'Country Seeders <br>';
-    Artisan::call('db:seed', [
-        '--class' => 'CountriesTableSeeder'
-    ]);
-    echo 'City Seeders <br>';
-    Artisan::call('db:seed', [
-        '--class' => 'AllCitySeeder'
+        '--path' => 'database/migrations/2024_08_08_092430_remove_columns_from_products_table.php'
     ]);
 });
 
