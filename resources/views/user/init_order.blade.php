@@ -203,7 +203,7 @@
                                     <label class="custom-control-label" for="paypal">PAYPAL</label>
                                 </div>
 
-                                <div class="custom-control custom-radio ">
+                                <div class="custom-control custom-radio" id="paystack_div" style="display: none;">
                                     <input type="radio" class="custom-control-input" name="payment" id="paystack"
                                         value="PAYSTACK" required>
                                     <label class="custom-control-label" for="paystack">PayStack</label>
@@ -574,6 +574,17 @@
         //     }
         // });
 
+        $('input[name="billing_address"]').on('click', function() {
+            $('#paystack_div').hide();
+            console.log($(this).data('country-iso-2'));
+
+            if (this.checked) {
+                if ($(this).data('country-iso-2') == 'NG') {
+                    $('#paystack_div').show();
+                }
+            }
+        });
+
         function evaluateShipping(obj) {
             if ($(obj).is(':checked')) {
                 let country_iso_2 = $(obj).data('country-iso-2'),
@@ -639,8 +650,8 @@
                             $(shiping_cost_of_cart).text(response.shipping_cost);
                             $('#place_order_btn').attr('disabled', false);
                             $('#total_cost').text(response.shipping_plus_total);
-                            $('input[name="shipping_cost"]').val(response.euro_shipping_cost)
-                            $('input[name="total_amount_to_pay"]').val(response.euro_shipping_plus_total)
+                            $('input[name="shipping_cost"]').val(response.shipping_cost)
+                            $('input[name="total_amount_to_pay"]').val(response.shipping_plus_total)
                             // let markup = '';
                             //
                             // if (Object.keys(shipping_costs).length > 0) {

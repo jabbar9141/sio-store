@@ -396,6 +396,9 @@ class OrderController extends Controller
                 if ($transaction) {
                     $transaction->status = 'Done';
                     $transaction->save();
+                    $transaction->order->update([
+                        'status' => 'Completed'
+                    ]);
                 }
 
                 //empty cart
@@ -410,6 +413,9 @@ class OrderController extends Controller
                 if ($transaction) {
                     $transaction->status = 'Pending';
                     $transaction->save();
+                    $transaction->order->update([
+                        'status' => 'Pending'
+                    ]);
                 }
 
                 break;
@@ -419,6 +425,9 @@ class OrderController extends Controller
                 if ($transaction) {
                     $transaction->status = 'Cancelled';
                     $transaction->save();
+                    $transaction->order->update([
+                        'status' => 'Cancelled'
+                    ]);
                 }
 
                 //empty cart
@@ -510,6 +519,9 @@ class OrderController extends Controller
                     if ($transaction) {
                         $transaction->status = 'Done';
                         $transaction->save();
+                        $transaction->order->update([
+                            'status' => 'Completed'
+                        ]);
                     }
 
                     //empty cart
@@ -524,6 +536,9 @@ class OrderController extends Controller
                     if ($transaction) {
                         $transaction->status = 'Pending';
                         $transaction->save();
+                        $transaction->order->update([
+                            'status' => 'Pending'
+                        ]);
                     }
 
                     break;
@@ -533,6 +548,9 @@ class OrderController extends Controller
                     if ($transaction) {
                         $transaction->status = 'Cancelled';
                         $transaction->save();
+                        $transaction->order->update([
+                            'status' => 'Cancelled'
+                        ]);
                     }
 
                     //empty cart

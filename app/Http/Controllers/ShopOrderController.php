@@ -398,7 +398,7 @@ class ShopOrderController extends Controller
                         env('SUMUP_EMAIL'),
                         'Payment Intent for order: ' . $order_id,
                         Auth::user()->email,
-                        $YOUR_DOMAIN . '/payment-success?session_id={CHECKOUT_SESSION_ID}'
+                        $YOUR_DOMAIN . '/payment-success-sumup?session_id={CHECKOUT_SESSION_ID}'
                     );
                     $paymentIntent = $checkoutResponse->getBody();
                 } catch (\SumUp\Exceptions\SumUpAuthenticationException $e) {
@@ -717,8 +717,11 @@ class ShopOrderController extends Controller
             $lp->order_id = $order->id;
             $lp->amount = (float)($order->items->sum('total_amount') ?? 0) + (float)($order->shipping_cost ?? 0);
             $lp->metadata = $order->metadata;
-            $lp->status = 'Pending';
+            $lp->status = 'Done';
             $lp->save();
+
+            $order->status = 'Completed';
+            $order->save();
 
             foreach ($order->items as $item) {
                 $variation = ProductVariation::where('id', $item->product_variation_id)->first();
@@ -824,8 +827,11 @@ class ShopOrderController extends Controller
                 $lp->order_id = $order->id;
                 $lp->amount = (float)($order->items->sum('total_amount') ?? 0) + (float)($order->shipping_cost ?? 0);
                 $lp->metadata = $order->metadata;
-                $lp->status = 'Completed';
+                $lp->status = 'Done';
                 $lp->save();
+
+                $order->status = 'Completed';
+                $order->save();
 
                 foreach ($order->items as $item) {
                     $variation = ProductVariation::where('id', $item->product_variation_id)->first();
