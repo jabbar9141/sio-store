@@ -41,24 +41,33 @@ Route::get('/email', function () {
     return view('emails.email-template');
 });
 
-Route::get('/make-model', function () {
-    // Generate the model and migration
-    $exitCode = Artisan::call('make:migration', [
-        'name' => 'add_column_quantity_in_product_variation',
-    ]);
-
-    return "Model and migration created successfully";
+Route::get('/clear-cache-every', function () {
+    $exitCode = Artisan::call('cache:cache');
+    $exitCode = Artisan::call('cache:cache');
+    $exitCode = Artisan::call('view:clear');
+    $exitCode = Artisan::call('config:clear');
+    $exitCode = Artisan::call('optimize');
+    return 'Cache cleared';
 });
 
-Route::get('/make-model-migration', function () {
-    // Generate the model and migration
-    $exitCode = Artisan::call('make:model', [
-        'name' => 'Country',
-        '-m' => true,
-    ]);
+// Route::get('/make-model', function () {
+//     // Generate the model and migration
+//     $exitCode = Artisan::call('make:migration', [
+//         'name' => 'add_column_quantity_in_product_variation',
+//     ]);
 
-    return "Model and migration created successfully";
-});
+//     return "Model and migration created successfully";
+// });
+
+// Route::get('/make-model-migration', function () {
+//     // Generate the model and migration
+//     $exitCode = Artisan::call('make:model', [
+//         'name' => 'Country',
+//         '-m' => true,
+//     ]);
+
+//     return "Model and migration created successfully";
+// });
 
 Route::get('/product-script', function () {
     $all_products = ProductModel::get();
@@ -80,11 +89,36 @@ Route::get('/product-script', function () {
     }
 });
 
-Route::get('/add-product-columns', function () {
-    Artisan::call('migrate', [
-        '--path' => 'database/migrations/2024_08_02_152948_add_columns_in_product_table.php'
-    ]);
-});
+// Route::get('/add-product-columns', function () {
+//     Artisan::call('migrate', [
+//         '--path' => 'database/migrations/2024_08_02_152948_add_columns_in_product_table.php'
+//     ]);
+// });
+
+// Route::get('/latest-migrations', function () {
+//     echo 'City Table Migration.<br>';
+//     Artisan::call('migrate', [
+//         '--path' => 'database/migrations/2024_08_04_200918_create_cities_table.php'
+//     ]);
+//     echo 'Country Table Migration<br>';
+//     Artisan::call('migrate', [
+//         '--path' => 'database/migrations/2024_08_04_202409_create_countries_table.php'
+//     ]);
+//     echo 'City Shipping Cost Table Migration<br>';
+//     Artisan::call('migrate', [
+//         '--path' => 'database/migrations/2024_08_05_141052_create_city_shipping_costs_table.php'
+//     ]);
+
+//     echo 'Running Seeders <br>';
+//     echo 'Country Seeders <br>';
+//     Artisan::call('db:seed', [
+//         '--class' => 'CountriesTableSeeder'
+//     ]);
+//     echo 'City Seeders <br>';
+//     Artisan::call('db:seed', [
+//         '--class' => 'AllCitySeeder'
+//     ]);
+// });
 
 Route::get('/null-variations', function () {
     // Generate the model and migration
@@ -107,7 +141,7 @@ Route::get('/dashboard', [HomeController::class, 'dashboard'])->name('dashboard'
 Route::post('get-in-touch', [HomeController::class, 'getInTouch'])->name('get-in-touch');
 Route::post('subscriber', [HomeController::class, 'subscriber'])->name('subscriber');
 
-Route::get('/delivery-city/{country_id}',[HomeController::class, 'getCityByCOuntryId'])->name('delivery-city');
+Route::get('/delivery-city/{country_id}', [HomeController::class, 'getCityByCOuntryId'])->name('delivery-city');
 
 
 //category

@@ -43,21 +43,21 @@
             <a href="{{ url('/') }}" class="text-decoration-none">
                 <img src="{{ asset('backend_assets') }}/images/siostore_logo.png" width="180" alt="" />
             </a>
-            <div class=" mx-2 location-box text-center">
-                <div class="align-items-center" id="deliveryModalToggle">
-                    <div style="margin-bottom: 0;">
-                        <div>
-                            <span style="margin-bottom: 0;">Deliver to</span>
-                        </div>
-                        <div class="d-inline-flex">
-                            <i class="fas fa-map-marker-alt text-primary" data-bs-toggle="modal"
-                                data-bs-target="#deliveryModal"></i>
+            <div class="d-flex align-items-center justify-content-center mx-2 location-box text-center">
+                <div class="" id="deliveryModalToggle">
+                    {{-- <div style="margin-bottom: 0;"> --}}
+                    {{-- <div> --}}
+                    <i class="fas fa-map-marker-alt text-primary" data-bs-toggle="modal"
+                        data-bs-target="#deliveryModal"></i>
+                    <span style="margin-bottom: 0;">Deliver to</span>
+                    {{-- </div> --}}
+                    {{-- <div class="d-inline-flex">
                             <h6
                                 style="display: inline-block; margin-bottom: 0; padding-top: 0; padding-bottom: 0; color: #1575b8;">
                                 {{ session('ship_to_str') }}
                             </h6>
-                        </div>
-                    </div>
+                        </div> --}}
+                    {{-- </div> --}}
                 </div>
 
                 <!-- Modal -->
