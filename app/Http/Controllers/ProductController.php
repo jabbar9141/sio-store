@@ -79,145 +79,147 @@ class ProductController extends Controller
 
         set_time_limit(300);
         $data = $request->validated();
+        return DB::transaction(function () use ($request, $data) {
 
-        // handling the product thumbnail
-        if ($request->has('csv_file')) {
-            $this->sioBuyProducts($request);
-            return response(['msg' => 'Product is uploading In Progress.'], 200);
-        } else {
+            // handling the product thumbnail
+            if ($request->has('csv_file')) {
+                $this->sioBuyProducts($request);
+                return response(['msg' => 'Product is uploading In Progress.'], 200);
+            } else {
 
-            $data['product_thumbnail'] =
-                MyHelpers::uploadImage($request->file('product_thumbnail'), self::PRODUCT_IMAGES_PATH);
+                $data['product_thumbnail'] =
+                    MyHelpers::uploadImage($request->file('product_thumbnail'), self::PRODUCT_IMAGES_PATH);
 
-            // handling the vendor id
-            $data['vendor_id'] = $this->getVendorId();
+                // handling the vendor id
+                $data['vendor_id'] = $this->getVendorId();
 
-            if (null == $data['product_tags']) {
-                $data['product_tags']  =  implode(',', explode(' ', $request->get('product_name'))); // Example tags
+                if (null == $data['product_tags']) {
+                    $data['product_tags']  =  implode(',', explode(' ', $request->get('product_name'))); // Example tags
+                }
+
+                // handling the product slug
+                $data['product_slug'] = $this->getProductSlug($data['product_name']);
+
+                // status of the product
+                $data['product_status'] = $request->get('product_status') ? 1 : 0;
+                $data['retail_available'] = $request->get('retail_available') ? 1 : 0;
+                $data['wholesale_available'] = $request->get('wholesale_available') ? 1 : 0;
+                $data['returns_allowed'] = $request->get('returns_allowed') ? 1 : 0;
+                $data['product_quantity'] = array_sum($request->get('product_quantity')) ?? 0;
+                $data['product_price'] = 0;
+                $data['wholesale_price'] = 0;
+
+                $data['product_colors'] = json_encode([]);
+
+                $data['available_regions'] = json_encode($data['available_regions']);
+
+
+                // inserting the product
+                if ($data['product_images'])
+                    unset($data['product_images']);
+
+                if ($data['product_variations'])
+                    unset($data['product_variations']);
+
+                if ($data['files'])
+                    unset($data['files']);
+
+                $insertedProductId = ProductModel::insertGetId($data);
+
+                if ($insertedProductId) {
+                    if ($request->has('product_images'))
+
+                        $this->handleProductMultiImages($request->file('product_images'), $insertedProductId);
+
+                    $this->handleProductOffers($request, $insertedProductId);
+
+                    if ($request->has('product_variations')) {
+                        $uploadedImages = [];
+                        if (isset($request->files) && count($request->files) > 0) {
+                            $files = $request->file('files');
+                            foreach ($files as $file) {
+                                $uploadedImages[] =  MyHelpers::uploadImage($file, self::PRODUCT_IMAGES_PATH);
+                            }
+                        }
+                        $uploadedVideos = [];
+                        if (isset($request->product_video) && count($request->product_video) > 0) {
+                            $videos = $request->file('product_video');
+                            foreach ($videos as $video) {
+                                $uploadedVideos[] =  MyHelpers::uploadImage($video, self::PRODUCT_IMAGES_PATH);
+                            }
+                        }
+
+                        $productVariations = json_decode($request->input('product_variations'), true);
+                        foreach ($productVariations as $productVariation) {
+                            if (count($productVariation['fileIndices']) > 0) {
+                                $tempArray = [];
+                                foreach ($productVariation['fileIndices'] as $count) {
+                                    $tempArray[] = $uploadedImages[$count];
+                                }
+                                $uploadedImages = array_slice($uploadedImages, count($tempArray));
+                                $jsonEncodedImages = json_encode($tempArray);
+                            }
+
+                            if (count($productVariation['videoIndices']) > 0) {
+                                $tempVideoLink = [];
+                                foreach ($productVariation['videoIndices'] as $count) {
+                                    $tempVideoLink[] = $uploadedVideos[$count];
+                                }
+                                $uploadedVideos = array_slice($uploadedVideos, count($tempVideoLink));
+                                $jsonEncodedVideo = json_encode($tempVideoLink);
+                            }
+
+                            ProductVariation::create([
+                                'product_id' => $insertedProductId,
+                                'color_id' => 0,
+                                'size_id' => 0,
+                                'dimention_id' => 0,
+                                'size_name' => $productVariation['size_name'],
+                                'color_name' => $productVariation['color_name'],
+                                'width' => $productVariation['width'],
+                                'height' => $productVariation['height'],
+                                'length' => $productVariation['length'],
+                                'weight' => $productVariation['weight'],
+                                'price' => MyHelpers::toEuro(Auth::user()?->currency_id, (float) $productVariation['price']),
+                                'product_quantity' => $productVariation['quantity'],
+                                'whole_sale_price' =>  MyHelpers::toEuro(Auth::user()?->currency_id, (float) $productVariation['whole_sale_price']),
+                                'image_url' => $jsonEncodedImages ?? null,
+                                'video_url' => $jsonEncodedVideo ?? null
+                            ]);
+                        }
+                    }
+
+                    $users = User::where('status', true)->get();
+
+                    $total_quantity = 0;
+                    $total_wholesale = 0;
+                    $total_price = 0;
+
+                    $product = ProductModel::find($insertedProductId);
+                    foreach ($product->variations as $key => $variation) {
+                        $total_quantity += $variation->product_quantity ?? 0;
+                        $total_price += $variation->price * $variation->product_quantity ?? 0;
+                        $total_wholesale += $variation->whole_sale_price * $variation->product_quantity ?? 0;
+                    }
+
+                    $product->update([
+                        'total_variation_quantity' => $total_quantity,
+                        'total_variation_whole_sale_price' => $total_wholesale,
+                        'total_variation_price' => $total_price,
+                    ]);
+                    $products = ProductModel::where('vendor_id', $this->getVendorId())
+                        ->orderBy('product_id', 'desc')
+                        ->limit(12)
+                        ->get();
+                    foreach ($users as $user) {
+                        Mail::to($user->email)->send(new AddProductEmail($product, $products));
+                    }
+                    Mail::to('support@siostore.eu')->send(new AddProductEmail($product, $products));
+
+                    return response(['msg' => 'Product is added successfully.'], 200);
+                } else return redirect('add_product')->with('error', 'Failed to add this product, try again.');
             }
-
-            // handling the product slug
-            $data['product_slug'] = $this->getProductSlug($data['product_name']);
-
-            // status of the product
-            $data['product_status'] = $request->get('product_status') ? 1 : 0;
-            $data['retail_available'] = $request->get('retail_available') ? 1 : 0;
-            $data['wholesale_available'] = $request->get('wholesale_available') ? 1 : 0;
-            $data['returns_allowed'] = $request->get('returns_allowed') ? 1 : 0;
-            $data['product_quantity'] = array_sum($request->get('product_quantity')) ?? 0;
-            $data['product_price'] = 0;
-            $data['wholesale_price'] = 0;
-
-            $data['product_colors'] = json_encode([]);
-
-            $data['available_regions'] = json_encode($data['available_regions']);
-
-
-            // inserting the product
-            if ($data['product_images'])
-                unset($data['product_images']);
-
-            if ($data['product_variations'])
-                unset($data['product_variations']);
-
-            if ($data['files'])
-                unset($data['files']);
-
-            $insertedProductId = ProductModel::insertGetId($data);
-
-            if ($insertedProductId) {
-                if ($request->has('product_images'))
-
-                    $this->handleProductMultiImages($request->file('product_images'), $insertedProductId);
-
-                $this->handleProductOffers($request, $insertedProductId);
-
-                if ($request->has('product_variations')) {
-                    $uploadedImages = [];
-                    if (isset($request->files) && count($request->files) > 0) {
-                        $files = $request->file('files');
-                        foreach ($files as $file) {
-                            $uploadedImages[] =  MyHelpers::uploadImage($file, self::PRODUCT_IMAGES_PATH);
-                        }
-                    }
-                    $uploadedVideos = [];
-                    if (isset($request->product_video) && count($request->product_video) > 0) {
-                        $videos = $request->file('product_video');
-                        foreach ($videos as $video) {
-                            $uploadedVideos[] =  MyHelpers::uploadImage($video, self::PRODUCT_IMAGES_PATH);
-                        }
-                    }
-
-                    $productVariations = json_decode($request->input('product_variations'), true);
-                    foreach ($productVariations as $productVariation) {
-                        if (count($productVariation['fileIndices']) > 0) {
-                            $tempArray = [];
-                            foreach ($productVariation['fileIndices'] as $count) {
-                                $tempArray[] = $uploadedImages[$count];
-                            }
-                            $uploadedImages = array_slice($uploadedImages, count($tempArray));
-                            $jsonEncodedImages = json_encode($tempArray);
-                        }
-
-                        if (count($productVariation['videoIndices']) > 0) {
-                            $tempVideoLink = [];
-                            foreach ($productVariation['videoIndices'] as $count) {
-                                $tempVideoLink[] = $uploadedVideos[$count];
-                            }
-                            $uploadedVideos = array_slice($uploadedVideos, count($tempVideoLink));
-                            $jsonEncodedVideo = json_encode($tempVideoLink);
-                        }
-
-                        ProductVariation::create([
-                            'product_id' => $insertedProductId,
-                            'color_id' => 0,
-                            'size_id' => 0,
-                            'dimention_id' => 0,
-                            'size_name' => $productVariation['size_name'],
-                            'color_name' => $productVariation['color_name'],
-                            'width' => $productVariation['width'],
-                            'height' => $productVariation['height'],
-                            'length' => $productVariation['length'],
-                            'weight' => $productVariation['weight'],
-                            'price' => MyHelpers::toEuro(Auth::user()?->currency_id, (float) $productVariation['price']),
-                            'product_quantity' => $productVariation['quantity'],
-                            'whole_sale_price' =>  MyHelpers::toEuro(Auth::user()?->currency_id, (float) $productVariation['whole_sale_price']),
-                            'image_url' => $jsonEncodedImages ?? null,
-                            'video_url' => $jsonEncodedVideo ?? null
-                        ]);
-                    }
-                }
-
-                $users = User::where('status', true)->get();
-
-                $total_quantity = 0;
-                $total_wholesale = 0;
-                $total_price = 0;
-
-                $product = ProductModel::find($insertedProductId);
-                foreach ($product->variations as $key => $variation) {
-                    $total_quantity += $variation->product_quantity ?? 0;
-                    $total_price += $variation->price * $variation->product_quantity ?? 0;
-                    $total_wholesale += $variation->whole_sale_price * $variation->product_quantity ?? 0;
-                }
-
-                $product->update([
-                    'total_variation_quantity' => $total_quantity,
-                    'total_variation_whole_sale_price' => $total_wholesale,
-                    'total_variation_price' => $total_price,
-                ]);
-                $products = ProductModel::where('vendor_id', $this->getVendorId())
-                    ->orderBy('product_id', 'desc')
-                    ->limit(12)
-                    ->get();
-                foreach ($users as $user) {
-                    Mail::to($user->email)->send(new AddProductEmail($product, $products));
-                }
-                Mail::to('support@siostore.eu')->send(new AddProductEmail($product, $products));
-
-                return response(['msg' => 'Product is added successfully.'], 200);
-            } else return redirect('add_product')->with('error', 'Failed to add this product, try again.');
-        }
+        });
     }
 
     public function massInsertProducts(Request $request)
@@ -1015,6 +1017,9 @@ class ProductController extends Controller
         if ($product) {
             $first_variant = $product->variations->first();
             $available_regions = json_decode($product->available_regions);
+            if(!is_array($available_regions)){
+                $available_regions = json_decode($available_regions, true);
+            }
 
             // dd($product, json_decode($product->available_regions), in_array('global', $available_regions));
 
@@ -1229,6 +1234,9 @@ class ProductController extends Controller
 
         if ($productVariation) {
             $available_regions = json_decode($product->available_regions);
+            if(!is_array($available_regions)){
+                $available_regions = json_decode($available_regions, true);
+            }
 
             if ($product->vendor->user->currency) {
                 $vendor_country = Country::where('name', 'like', $product->vendor->user->currency->country)->first();

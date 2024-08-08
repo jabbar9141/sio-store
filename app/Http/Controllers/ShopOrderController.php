@@ -105,10 +105,14 @@ class ShopOrderController extends Controller
         $sum_shipping_cost = 0;
 
         foreach ($products as $product) {
+            $request_product_weight = $product['weight'];
             $product = ProductModel::find($product['product_id']);
             if ($product) {
                 $first_variant = ProductVariation::find($product['product_variation_id']);
                 $available_regions = json_decode($product->available_regions);
+                if (!is_array($available_regions)) {
+                    $available_regions = json_decode($available_regions, true);
+                }
 
                 // dd($product, json_decode($product->available_regions), in_array('global', $available_regions));
 
@@ -122,18 +126,18 @@ class ShopOrderController extends Controller
 
                 if ($vendor_country->id == (int)session('country_id')) {
                     $city_percentage = CityShippingCost::where('city_id', (int)session('city_id'))->first()?->percentage;
-                    $total_shipping = ShippingCost::where('country_iso_2', $vendor_country->iso2)->where('weight', $first_variant->weight ?? 1)->first()?->cost;
+                    $total_shipping = ShippingCost::where('country_iso_2', $vendor_country->iso2)->where('weight', $request_product_weight)->first()?->cost;
                     if ($city_percentage && $total_shipping) {
                         $shipping_cost = number_format(($city_percentage / $total_shipping) * 100, 2);
                     } else {
                         $shipping_cost = $total_shipping;
                     }
                 } elseif (in_array('global', $available_regions)) {
-                    $shipping_cost = ShippingCost::where('country_iso_2', $vendor_country->iso2)->where('weight', $first_variant->weight ?? 1)->first()?->cost;
+                    $shipping_cost = ShippingCost::where('country_iso_2', $vendor_country->iso2)->where('weight', $request_product_weight)->first()?->cost;
                 } else {
                     $countries_origins = Country::whereIn('id', $available_regions)->pluck('id')->toArray();
                     if (in_array((int)session('country_id'), $countries_origins)) {
-                        $shipping_cost = ShippingCost::where('country_iso_2', $vendor_country->iso2)->where('weight', $first_variant->weight ?? 1)->first()?->cost;
+                        $shipping_cost = ShippingCost::where('country_iso_2', $vendor_country->iso2)->where('weight', $request_product_weight)->first()?->cost;
                     } else {
                         $shipping_cost = 0;
                     }
@@ -167,9 +171,9 @@ class ShopOrderController extends Controller
         return response()->json([
             'success' => $shipping_cost > 0 ? true : false,
             'shipping_cost' => $sum_shipping_cost,
-            'shipping_plus_total' => $sum_shipping_cost,
-            'euro_shipping_cost' => $sum_shipping_cost,
-            'euro_shipping_plus_total' => $sum_shipping_cost,
+            'shipping_plus_total' => MyHelpers::fromEuroView(session('currency_id', 0), $sum_shipping_cost + $request->euro_cart_total),
+            'euro_shipping_cost' => MyHelpers::fromEuroView(session('currency_id', 0), $sum_shipping_cost),
+            'euro_shipping_plus_total' => $sum_shipping_cost + $request->euro_cart_total,
             'message' => $shipping_cost > 0 ? 'Success' : 'Error Calculating Shipping Cost',
         ]);
 
@@ -774,7 +778,7 @@ class ShopOrderController extends Controller
             $response = Http::withToken(env('PAYSTACK_SECRET_KEY'))->post('https://api.paystack.co/transaction/initialize', [
                 'email' => Auth::user()->email,
                 'amount' => $formattedPrice * 100,
-                'callback_url' => 'https://www.siostore.eu/paystack.callback/?order_id='.$order_id, // route('paystack.callback', ['order_id' => $order_id])
+                'callback_url' => 'https://www.siostore.eu/paystack.callback/?order_id=' . $order_id, // route('paystack.callback', ['order_id' => $order_id])
             ]);
 
             $data = $response->json();

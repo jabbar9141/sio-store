@@ -562,6 +562,7 @@ class AdminController extends Controller
 
             return response()->json([
                 'success' => true,
+                'city_name' => $shippingCost->city->name ?? null,
                 'shipping_percentage' => $shippingCost->percentage ?? 0
             ]);
         } else {
@@ -575,36 +576,59 @@ class AdminController extends Controller
     public function saveCost(Request $request, $id)
     {
         $request->validate([
-            'percentage' => 'required|min:0',
+            'percentage' => 'required|numeric|min:0|max:100',
             // 'cities' => 'required',
             // 'weight' => 'required|min:0',
         ]);
-
         return DB::transaction(function () use ($id, $request) {
             $country = Country::find($id);
-            $city_id = (int)$request->city_id;
-            if ($request->city_id) {
-                $shippingCost = new CityShippingCost();
 
-                $shippingCost->updateOrCreate([
-                    'country_id' => $country->id,
-                    'city_id' => $city_id,
-                ], [
-                    'country_id' => $country->id,
-                    'city_id' => $city_id,
-                    'percentage' => $request->percentage,
-                ]);
+            if ($request->has('multiple_cities')) {
+                $city_ids = $request->cities;
+                if (in_array('all', $city_ids)) {
+                    $cities = City::where('country_id', $id)->pluck('id')->toArray();
+                } else {
+                    $cities = City::whereIn('id', $city_ids)->where('country_id', $id)->pluck('id')->toArray();
+                }
 
-                return response()->json([
-                    'success' => true,
-                    'message' => 'Data Saved Successfully'
-                ]);
+                foreach ($cities as $city_id) {
+                    $shippingCost = new CityShippingCost();
+                    $shippingCost->updateOrCreate([
+                        'country_id' => $country->id,
+                        'city_id' => $city_id,
+                    ], [
+                        'country_id' => $country->id,
+                        'city_id' => $city_id,
+                        'percentage' => $request->percentage,
+                    ]);
+                }
+
+                return back()->with(['success' => 'Data Saved Successfully !']);
             } else {
-                return response()->json([
-                    'success' => true,
-                    'message' => 'Something went wrong'
-                ]);
-                return redirect()->back()->withErrors('If Selecting individual cities, please unselect All Cities options');
+                $city_id = (int)$request->city_id;
+                if ($request->city_id) {
+                    $shippingCost = new CityShippingCost();
+
+                    $shippingCost->updateOrCreate([
+                        'country_id' => $country->id,
+                        'city_id' => $city_id,
+                    ], [
+                        'country_id' => $country->id,
+                        'city_id' => $city_id,
+                        'percentage' => $request->percentage,
+                    ]);
+
+                    return response()->json([
+                        'success' => true,
+                        'message' => 'Data Saved Successfully'
+                    ]);
+                } else {
+                    return response()->json([
+                        'success' => true,
+                        'message' => 'Something went wrong'
+                    ]);
+                    return redirect()->back()->withErrors('If Selecting individual cities, please unselect All Cities options');
+                }
             }
         });
     }

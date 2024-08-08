@@ -95,30 +95,30 @@ Route::get('/product-script', function () {
 //     ]);
 // });
 
-// Route::get('/latest-migrations', function () {
-//     echo 'City Table Migration.<br>';
-//     Artisan::call('migrate', [
-//         '--path' => 'database/migrations/2024_08_04_200918_create_cities_table.php'
-//     ]);
-//     echo 'Country Table Migration<br>';
-//     Artisan::call('migrate', [
-//         '--path' => 'database/migrations/2024_08_04_202409_create_countries_table.php'
-//     ]);
-//     echo 'City Shipping Cost Table Migration<br>';
-//     Artisan::call('migrate', [
-//         '--path' => 'database/migrations/2024_08_05_141052_create_city_shipping_costs_table.php'
-//     ]);
+Route::get('/latest-migrations', function () {
+    echo 'City Table Migration.<br>';
+    Artisan::call('migrate', [
+        '--path' => 'database/migrations/2024_08_04_200918_create_cities_table.php'
+    ]);
+    echo 'Country Table Migration<br>';
+    Artisan::call('migrate', [
+        '--path' => 'database/migrations/2024_08_04_202409_create_countries_table.php'
+    ]);
+    echo 'City Shipping Cost Table Migration<br>';
+    Artisan::call('migrate', [
+        '--path' => 'database/migrations/2024_08_05_141052_create_city_shipping_costs_table.php'
+    ]);
 
-//     echo 'Running Seeders <br>';
-//     echo 'Country Seeders <br>';
-//     Artisan::call('db:seed', [
-//         '--class' => 'CountriesTableSeeder'
-//     ]);
-//     echo 'City Seeders <br>';
-//     Artisan::call('db:seed', [
-//         '--class' => 'AllCitySeeder'
-//     ]);
-// });
+    echo 'Running Seeders <br>';
+    echo 'Country Seeders <br>';
+    Artisan::call('db:seed', [
+        '--class' => 'CountriesTableSeeder'
+    ]);
+    echo 'City Seeders <br>';
+    Artisan::call('db:seed', [
+        '--class' => 'AllCitySeeder'
+    ]);
+});
 
 Route::get('/null-variations', function () {
     // Generate the model and migration

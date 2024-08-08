@@ -17,6 +17,36 @@
         </div>
     </div>
     <!--end breadcrumb -->
+
+    <div class="card mb-3">
+        <div class="card-body">
+            <form action="{{ route('admin-shipping-cost', ['id' => $country->id]) }}" method="POST">
+                @csrf
+                <input type="hidden" name="multiple_cities" value="yes">
+                <div class="row mb-3">
+                    <div class="col-6">
+                        <label for="cities">City</label>
+                        <select multiple name="cities[]" id="cities" class="form-control select2" required>
+                            <option value="all" selected>All Cities</option>
+                            @foreach ($cities as $city)
+                                <option value="{{ $city->id }}">{{ $city->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="col-6">
+                        <label for="percentage">Shipping Percentage <small class="text-danger">*</small></label>
+                        <input type="number" name="percentage" id="all_shipping_percentage" class="form-control" min="0" max="100"
+                            step="0.01" required>
+                    </div>
+                </div>
+
+                <div class="text-end">
+                    <button class="btn btn-primary">Submit</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <div class="card">
         <div class="card-body row">
             <div class="col-12">
@@ -54,8 +84,8 @@
                         <input type="hidden" name="city_id">
                         <div class="col-12 mb-3">
                             <label for="percentage">Shipping Percentage</label>
-                            <input type="number" name="percentage" id="shipping_percentage" class="form-control" min="0"
-                                step="0.01" required>
+                            <input type="number" name="percentage" id="shipping_percentage" class="form-control"
+                                min="0" max="100" step="0.01" required>
                         </div>
 
                         <div class="text-end">
@@ -91,6 +121,7 @@
                 success: function(response) {
                     if (response.success) {
                         $('input[name="city_id"]').val(city_id);
+                        $('#modalTitleId').text(response.city_name ?? 'Update Percentage');
                         $('#shipping_percentage').val(response.shipping_percentage ?? 0);
                         // $('#shipping_cost_modal').modal('show');
                         myModal.show();
