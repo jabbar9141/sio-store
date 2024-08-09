@@ -138,7 +138,7 @@ class HomeController extends Controller
                 $today = Carbon::today();
 
                 // Get order IDs for non-cancelled, non-refunded, and non-failed orders created today
-                $orderIds = ShopOrder::whereNotIn('status', ['Cancelled', 'Refunded', 'Failed'])
+                $orderIds = ShopOrder::whereIn('status', ['Processing', 'On Hold', 'Completed', 'Shipped', 'Delivered', 'Review Required']) //->whereNotIn('status', ['Cancelled', 'Refunded', 'Failed'])
                     ->whereDate('created_at', $today)
                     ->pluck('id')
                     ->toArray();
@@ -242,7 +242,7 @@ class HomeController extends Controller
                 $total_revenue += WalkInOrderItem::sum('total_price');
                 $today = Carbon::today();
                 // Get order IDs for non-cancelled, non-refunded, and non-failed orders created today
-                $orderIds = ShopOrder::whereNotIn('status', ['Cancelled', 'Refunded', 'Failed'])
+                $orderIds = ShopOrder::whereIn('status', ['Processing', 'On Hold', 'Completed', 'Shipped', 'Delivered', 'Review Required']) //whereNotIn('status', ['Cancelled', 'Refunded', 'Failed'])
                     ->whereDate('created_at', $today)
                     ->pluck('id')
                     ->toArray();
@@ -434,7 +434,5 @@ class HomeController extends Controller
             'delivery_country' => 'required',
             'delivery_city' => 'required',
         ]);
-
-
     }
 }
