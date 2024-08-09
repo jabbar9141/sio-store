@@ -8,6 +8,10 @@
             box-shadow: rgb(0 100 175 / 30%) 0px 1px 2px 0px, rgb(24 97 152 / 15%) 0px 1px 3px 1px;
         }
 
+        .object_fit {
+            object-fit: contain !important;
+        }
+
         .services:hover {
             background-color: #1575b8 !important;
         }
@@ -149,19 +153,19 @@
                                             @endphp
 
                                             @if ($variation && $variationImages && count($variationImages) > 0)
-                                                <img class="img-fluid w-100 h-100 img-thumbnail"
+                                                <img class="img-fluid h-100 img-thumbnail"
                                                     src="uploads/images/product/{{ $variationImages[0] }}" alt="">
                                             @else
                                                 @if ($r->images && count($r->images) > 0)
-                                                    <img class="img-fluid w-100 h-100 img-thumbnail"
+                                                    <img class="img-fluid h-100 img-thumbnail"
                                                         src="uploads/images/product/{{ $r->images[0]->product_image }}"
                                                         alt="">
                                                 @elseif($r->product_thumbnail)
-                                                    <img class="img-fluid w-100 h-100 img-thumbnail"
+                                                    <img class="img-fluid h-100 img-thumbnail"
                                                         src="uploads/images/product/{{ $r->product_thumbnail }}"
                                                         alt="">
                                                 @else
-                                                    <img class="img-fluid w-100 h-100 img-thumbnail"
+                                                    <img class="img-fluid h-100 img-thumbnail"
                                                         src="uploads/images/product/6a51e6b5a1f5ef3ad2754973d6b5eede.png"
                                                         alt="">
                                                     {{-- <img src="{{ asset('user_assets/img/top-deal.jpg') }}" class="img-fluid w-100 img-thumbnail" alt="{{ $r->product_name }}"> --}}
@@ -237,13 +241,13 @@
                         <div class="swiper-slide">
                             <div class="product-cards pb-3">
                                 <h2 class="px-3">{{ $category->category_name }}</h2>
-                                <div class="product-grid px-3">
+                                <div class="product-grid px-3 text-center">
                                     <?php
                                         $products = ProductModel::whereHas('variations', function ($query) {
                                             $query->where('product_quantity', '>', 0);
                                         })->where('category_id', $category->category_id)->where('admin_approved', 1)->where('product_status', 1)->orderBy('product_id', 'DESC')->limit(4)->get();
 
-                                        
+
 
                                         if ($products->count() > 0) {
                                             foreach ($products as $product) {
@@ -254,14 +258,14 @@
                                         <div class="category-img">
                                             @if ($product->product_thumbnail)
                                                 <img src="{{ asset('uploads/images/product/' . $product->product_thumbnail) }}"
-                                                    class="h-100 w-100" alt="{{ $category->category_name }}">
+                                                    class="h-100" alt="{{ $category->category_name }}">
                                             @else
-                                                <img class="h-100 w-100" alt="no-image"
+                                                <img class="h-100" alt="no-image"
                                                     src="{{ asset('uploads/images/brand/c3aa514869752e1219a6eefa728e7edb.png') }}">
                                             @endif
 
                                         </div>
-                                        <span><?= $product->product_name ?></span>
+                                        <span><?= substr($product->product_name, 0, 20) . '  ...  ' ?></span>
                                     </a>
 
                                     <?php }
@@ -341,7 +345,8 @@
                                                 <p class="badges px-1">Up to 67 % off</p>
                                                 <span class="limited-offer">Limited time deal</span>
                                             </div>
-                                            <span class="text-black">{{ $today_deal->product_name ?? '' }}</span>
+                                            <span
+                                                class="text-black">{{ substr($today_deal->product_name, 0, 20) . '  ...  ' }}</span>
                                         </div>
                                     </div>
                                 </a>
@@ -369,7 +374,7 @@
                                     <a href="{{ route('store.showCategory', $category->category_slug) }}"
                                         class="top-deal-img text-center py-2">
                                         <img src="uploads/images/category/{{ $category->category_image }}" alt=""
-                                            class="h-100 w-100">
+                                            class="h-100 w-100 object_fit">
                                     </a>
                                     <div class="top-deal-content mt-1">
                                         <h5 class="Categories-title">{{ $category->category_name }}</h5>
@@ -441,15 +446,15 @@
                                         <div class="card rounded px-2 py-2 h-100 d-flex flex-column">
                                             <div class="product-img position-relative overflow-hidden">
                                                 @if ($i->images && count($i->images) > 0)
-                                                    <img class="img-fluid w-100 h-100"
+                                                    <img class="img-fluid w-100 h-100 object_fit"
                                                         src="uploads/images/product/{{ $i->images[0]->product_image }}"
                                                         alt="">
                                                 @elseif($i->product_thumbnail)
-                                                    <img class="img-fluid w-100 h-100"
+                                                    <img class="img-fluid w-100 h-100 object_fit"
                                                         src="uploads/images/product/{{ $i->product_thumbnail }}"
                                                         alt="">
                                                 @else
-                                                    <img class="img-fluid w-100 h-100" style="height: 250px"
+                                                    <img class="img-fluid w-100 h-100 object_fit" style="height: 250px"
                                                         alt="{{ $i->product_name }}">
                                                 @endif
 

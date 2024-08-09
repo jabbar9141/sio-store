@@ -296,21 +296,21 @@
 
                         </div>
                         <!-- Right column for preview -->
-                        <div class="col-md-10" style="padding: 10px;">
+                        <div class="col-md-10 text-center" style="padding: 10px;">
                             @if ($firstVariation && $variationImages && count($variationImages) > 0)
-                                <img style="width: auto; height:500px" id="ProductImage" class="img-fluid"
+                                <img style="" id="ProductImage" class="img-fluid w-75"
                                     src="/uploads/images/product/{{ $variationImages[0] }}"
                                     alt="{{ $product->product_name }}">
                                 <video style="display:none;width: auto; height:500px" id="ProductVideo" class="img-fluid"
                                     width="100%" controls></video>
                             @elseif($product->images->first())
-                                <img style="width: auto; height:500px" id="ProductImage" class="img-fluid"
+                                <img style="" id="ProductImage" class="img-fluid w-75"
                                     src="/uploads/images/product/{{ $product->images->first()->product_image }}"
                                     alt="{{ $product->product_name }}">
                                 <video style="display:none;width: auto; height:500px" id="ProductVideo" class="img-fluid"
                                     width="100%" controls></video>
                             @else
-                                <img style="width: auto; height:500px" id="ProductImage" class="img-fluid"
+                                <img style="" id="ProductImage" class="img-fluid w-75"
                                     src="/uploads/images/product/{{ $product->product_thumbnail }}"
                                     alt="{{ $product->product_name }}">
                                 <video style="display:none;width: auto; height:500px" id="ProductVideo" class="img-fluid"
@@ -388,7 +388,7 @@
                     <form method="POST" action="{{ route('store.addItem') }}" id="addToCartForm">
 
                         @csrf
-                        <div class="d-flex justify-content-between">
+                        <div class="d-flex justify-content-between align-items-center">
                             <h3>{{ $product->product_name }}</h3>
                             <a href="#" class="btn btn-primary rounded-pill" data-toggle="modal"
                                 data-target="#reviewModal">Review</a>

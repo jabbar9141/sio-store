@@ -127,6 +127,8 @@ class HomeController extends Controller
 
                 $total_revenue = ShopOrderItem::whereHas('item', function ($query) {
                     $query->where('vendor_id', Auth::user()->vendor_shop->vendor_id);
+                })->whereHas('order', function ($q) {
+                    $q->whereIn('status', ['Processing', 'On Hold', 'Completed', 'Shipped', 'Delivered', 'Review Required']);
                 })->sum('total_price');
 
                 $total_shop_revenue = $total_revenue;
@@ -218,7 +220,7 @@ class HomeController extends Controller
                 })->pluck('id')->unique()->count();
 
                 $total_revenue = ShopOrderItem::whereHas('order', function ($query) {
-                    $query->where('user_id', Auth::id());
+                    $query->where('user_id', Auth::id())->whereIn('status', ['Processing', 'On Hold', 'Completed', 'Shipped', 'Delivered', 'Review Required']);;
                 })->sum('total_price');
 
                 $total_revenue += ShopOrder::where('user_id', Auth::id())->sum('shipping_cost');
@@ -237,7 +239,9 @@ class HomeController extends Controller
                 $orders_list = ShopOrderItem::limit(10)->get();
                 $users_total = ShopOrder::pluck('user_id')->unique()->count();
                 $users_total += WalkInOrder::count();
-                $total_revenue = ShopOrderItem::sum('price');
+                $total_revenue = ShopOrderItem::whereHas('order', function ($q) {
+                    $q->whereIn('status', ['Processing', 'On Hold', 'Completed', 'Shipped', 'Delivered', 'Review Required']);
+                })->sum('price');
                 $total_shop_revenue = $total_revenue;
                 $total_revenue += WalkInOrderItem::sum('total_price');
                 $today = Carbon::today();

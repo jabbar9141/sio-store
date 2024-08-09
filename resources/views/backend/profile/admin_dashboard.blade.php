@@ -273,6 +273,7 @@
                             <th>Order id</th>
                             <th>Product</th>
                             <th>Customer</th>
+                            <th>Vendor</th>
                             <th>Date</th>
                             <th>Price</th>
                             <th>Status</th>
@@ -300,6 +301,7 @@
                                             </div>
                                         </div>
                                     </td>
+                                    <td>{{ $order->variation->product->vendor->shop_name }}</td>
                                     <td>{{ $order->order->user->name }}</td>
                                     <td>{{ date('h:i d-m-Y', $order->created_at->timestamp) }}</td>
                                     <td>&euro; {{ $order->price }}</td>
