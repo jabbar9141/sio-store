@@ -35,7 +35,7 @@ class HomeController extends Controller
 {
     public function index(Request $request)
     {
-        $currency_id =  session('currency_id', Currency::where('status', true)->first()?->id ?? 0);
+        $currency_id = session('currency_id', Currency::where('status', true)->first()?->id ?? 0);
         $categories = CategoryModel::orderBy('category_id', 'asc')->inRandomOrder()->limit(30)->get();
         $announcements = Announcement::latest()->get();
         $brands = BrandModel::orderBy('brand_id', 'asc')->inRandomOrder()->limit(30)->get();
