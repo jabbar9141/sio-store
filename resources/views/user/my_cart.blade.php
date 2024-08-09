@@ -32,7 +32,7 @@
                             <th>Price</th>
                             <th>Quantity</th>
                             <th>Weight</th>
-                            <th>Shipping</th>
+                            {{-- <th>Shipping</th> --}}
                             <th>Total</th>
                             <th>Remove</th>
                         </tr>
@@ -43,6 +43,7 @@
                                 $session_cart = session('cart');
                                 $cart_total = 0;
                                 $total_shipping_cost = 0;
+                                $vendor_and_weight = [];
                             @endphp
                             @foreach ($session_cart as $it)
                                 @php
@@ -60,49 +61,12 @@
                                         $available_regions = json_decode($available_regions, true);
                                     }
 
-                                    if ($the_product->vendor->user->currency) {
-                                        $vendor_country = Country::where(
-                                            'name',
-                                            'like',
-                                            $the_product->vendor->user->currency->country,
-                                        )->first();
-                                    } else {
-                                        $vendor_country = Country::where('name', 'like', 'Italy')->first();
-                                    }
-
                                     $total_weight_of_quantities = $it['qty'] * $variation->weight;
 
-                                    if ($vendor_country->id == (int) session('country_id')) {
-                                        $city_percentage = CityShippingCost::where(
-                                            'city_id',
-                                            (int) session('city_id'),
-                                        )->first()?->percentage;
-                                        $total_shipping = ShippingCost::where('country_iso_2', $vendor_country->iso2)
-                                            ->where('weight', $variation->weight)
-                                            ->first()?->cost;
-                                        if ($city_percentage && $total_shipping) {
-                                            $shipping_cost = number_format(
-                                                ($city_percentage * $total_shipping) / 100,
-                                                2,
-                                            );
-                                        } else {
-                                            $shipping_cost = $total_shipping;
-                                        }
-                                    } elseif (in_array('global', $available_regions)) {
-                                        $shipping_cost = ShippingCost::where('country_iso_2', $vendor_country->iso2)
-                                            ->where('weight', $total_weight_of_quantities)
-                                            ->first()?->cost;
+                                    if (array_key_exists($the_product->vendor_id, $vendor_and_weight)) {
+                                        $vendor_and_weight[$the_product->vendor_id] += $total_weight_of_quantities;
                                     } else {
-                                        $countries_origins = Country::whereIn('id', $available_regions)
-                                            ->pluck('id')
-                                            ->toArray();
-                                        if (in_array((int) session('country_id'), $countries_origins)) {
-                                            $shipping_cost = ShippingCost::where('country_iso_2', $vendor_country->iso2)
-                                                ->where('weight', $total_weight_of_quantities)
-                                                ->first()?->cost;
-                                        } else {
-                                            $shipping_cost = 0;
-                                        }
+                                        $vendor_and_weight[$the_product->vendor_id] = $total_weight_of_quantities;
                                     }
                                 @endphp
                                 <tr>
@@ -136,12 +100,12 @@
                                         @endphp
                                         {{ $weight }}
                                     </td>
-                                    <td>
+                                    {{-- <td>
                                         @php
                                             $total_shipping_cost += $shipping_cost;
                                         @endphp
                                         {{ App\MyHelpers::fromEuroView(session('currency_id', 0), $shipping_cost) }}
-                                    </td>
+                                    </td> --}}
                                     <td class="align-middle">
                                         @php
                                             $the_tot = $it['qty'] * $price;
@@ -154,6 +118,55 @@
                                             onclick="return confirm('Are you sure you want to remove this item form cart')"><i
                                                 class="fa fa-times"></i></button></td>
                                 </tr>
+                            @endforeach
+
+                            @foreach ($vendor_and_weight as $vendor_id => $weight)
+                                @php
+                                $vendor = \App\Models\VendorShop::find($vendor_id);
+                                    if ($vendor->user->currency) {
+                                        $vendor_country = Country::where(
+                                            'name',
+                                            'like',
+                                            $vendor->user->currency->country,
+                                        )->first();
+                                    } else {
+                                        $vendor_country = Country::where('name', 'like', 'Italy')->first();
+                                    }
+
+                                    if ($vendor_country->id == (int) session('country_id')) {
+                                        $city_percentage = CityShippingCost::where(
+                                            'city_id',
+                                            (int) session('city_id'),
+                                        )->first()?->percentage;
+                                        $total_shipping = ShippingCost::where('country_iso_2', $vendor_country->iso2)
+                                            ->where('weight', $weight)
+                                            ->first()?->cost;
+                                        if ($city_percentage && $total_shipping) {
+                                            $shipping_cost = number_format(
+                                                ($city_percentage * $total_shipping) / 100,
+                                                2,
+                                            );
+                                        } else {
+                                            $shipping_cost = $total_shipping;
+                                        }
+                                    } elseif (in_array('global', $available_regions)) {
+                                        $shipping_cost = ShippingCost::where('country_iso_2', $vendor_country->iso2)
+                                            ->where('weight', $weight)
+                                            ->first()?->cost;
+                                    } else {
+                                        $countries_origins = Country::whereIn('id', $available_regions)
+                                            ->pluck('id')
+                                            ->toArray();
+                                        if (in_array((int) session('country_id'), $countries_origins)) {
+                                            $shipping_cost = ShippingCost::where('country_iso_2', $vendor_country->iso2)
+                                                ->where('weight', $weight)
+                                                ->first()?->cost;
+                                        } else {
+                                            $shipping_cost = 0;
+                                        }
+                                    }
+                                    $total_shipping_cost += $shipping_cost;
+                                @endphp
                             @endforeach
                         @else
                             <tr>

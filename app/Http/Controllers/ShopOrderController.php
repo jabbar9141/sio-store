@@ -100,7 +100,93 @@ class ShopOrderController extends Controller
             'products' => 'required'
         ]);
 
-        $products = $request->has('products') ? json_decode($request->products, true) : null;
+
+        $session_cart = session('cart');
+        $cart_total = 0;
+        $total_shipping_cost = 0;
+        $vendor_and_weight = [];
+
+
+        foreach ($session_cart as $it) {
+            $the_product = MyHelpers::getProductById($it['product_id']);
+            $variation = ProductVariation::find($it['variation_id']) ?? $the_product->variations[0];
+
+            $price = $variation ? $variation->price : $the_product->product_price;
+
+            $available_regions = json_decode($the_product->available_regions, true);
+            $total_weight_of_quantities = $it['qty'] * $variation->weight;
+
+            // Sum up the weights per vendor
+            if (array_key_exists($the_product->vendor_id, $vendor_and_weight)) {
+                $vendor_and_weight[$the_product->vendor_id] += $total_weight_of_quantities;
+            } else {
+                $vendor_and_weight[$the_product->vendor_id] = $total_weight_of_quantities;
+            }
+        }
+
+        // Now, calculate the shipping cost based on vendor and weight
+        $country = Country::where('iso2', $request->country_iso_2)->first();
+        $sum_shipping_cost = 0;
+
+        foreach ($vendor_and_weight as $vendor_id => $weight) {
+
+            $vendor = \App\Models\VendorShop::find($vendor_id);
+
+            // Determine the vendor's country
+            if ($vendor->user->currency) {
+                $vendor_country = Country::where('name', 'like', $vendor->user->currency->country)->first();
+            } else {
+                $vendor_country = Country::where('name', 'like', 'Italy')->first();
+            }
+
+            // Check if the vendor's country is the same as the request country
+            if ($vendor_country->id == $country->id) {
+                $city_percentage = CityShippingCost::where('city_id', (int) session('city_id'))->first()?->percentage;
+                $total_shipping = ShippingCost::where('country_iso_2', $vendor_country->iso2)
+                    ->where('weight', $weight)
+                    ->first()?->cost;
+
+                // Calculate the shipping cost considering city percentage if available
+                if ($city_percentage && $total_shipping) {
+                    $shipping_cost = number_format(($city_percentage * $total_shipping) / 100, 2);
+                } else {
+                    $shipping_cost = $total_shipping;
+                }
+            } elseif (in_array('global', $available_regions)) {
+                $shipping_cost = ShippingCost::where('country_iso_2', $vendor_country->iso2)
+                    ->where('weight', $weight)
+                    ->first()?->cost;
+            } else {
+                $countries_origins = Country::whereIn('id', $available_regions)
+                    ->pluck('id')
+                    ->toArray();
+
+                if (in_array($country->id, $countries_origins)) {
+                    $shipping_cost = ShippingCost::where('country_iso_2', $vendor_country->iso2)
+                        ->where('weight', $weight)
+                        ->first()?->cost;
+                } else {
+                    $shipping_cost = 0;
+                }
+            }
+
+            // Sum up the shipping cost
+            $sum_shipping_cost += $shipping_cost;
+        }
+
+        // Return the response with the calculated shipping cost and other relevant details
+        return response()->json([
+            'success' => $sum_shipping_cost > 0 ? true : false,
+            'shipping_cost' => $sum_shipping_cost,
+            'shipping_plus_total' => MyHelpers::fromEuroView(session('currency_id', 0), $sum_shipping_cost + $request->euro_cart_total),
+            'euro_shipping_cost' => MyHelpers::fromEuroView(session('currency_id', 0), $sum_shipping_cost),
+            'euro_shipping_plus_total' => $sum_shipping_cost + $request->euro_cart_total,
+            'message' => $sum_shipping_cost > 0 ? 'Success' : 'Error Calculating Shipping Cost',
+        ]);
+
+
+        // Todo: Previous Code
+        /*  $products = $request->has('products') ? json_decode($request->products, true) : null;
         $country = Country::where('iso2', $request->country_iso_2)->first();
 
         $sum_shipping_cost = 0;
@@ -177,6 +263,8 @@ class ShopOrderController extends Controller
             'euro_shipping_plus_total' => $sum_shipping_cost + $request->euro_cart_total,
             'message' => $shipping_cost > 0 ? 'Success' : 'Error Calculating Shipping Cost',
         ]);
+
+        */
 
 
         // $destination = Address::find($request->get('address_id'));
