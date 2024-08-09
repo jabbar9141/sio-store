@@ -396,9 +396,9 @@ class OrderController extends Controller
                 if ($transaction) {
                     $transaction->status = 'Done';
                     $transaction->save();
-                    $transaction->order->update([
-                        'status' => 'Completed'
-                    ]);
+                    $order = ShopOrder::where('id', $transaction->order_id)->first();
+                    $order->status = 'Completed';
+                    $order->save();
                 }
 
                 //empty cart
@@ -413,9 +413,9 @@ class OrderController extends Controller
                 if ($transaction) {
                     $transaction->status = 'Pending';
                     $transaction->save();
-                    $transaction->order->update([
-                        'status' => 'Pending'
-                    ]);
+                    $order = ShopOrder::where('id', $transaction->order_id)->first();
+                        $order->status = 'Pending';
+                        $order->save();
                 }
 
                 break;
@@ -425,9 +425,9 @@ class OrderController extends Controller
                 if ($transaction) {
                     $transaction->status = 'Cancelled';
                     $transaction->save();
-                    $transaction->order->update([
-                        'status' => 'Cancelled'
-                    ]);
+                    $order = ShopOrder::where('id', $transaction->order_id)->first();
+                    $order->status = 'Cancelled';
+                    $order->save();
                 }
 
                 //empty cart
@@ -477,6 +477,9 @@ class OrderController extends Controller
             $t = ShopOrderPayment::where('ref', $request->get('session_id'))->first();
             $t->status = 'Done';
             $t->save();
+            $u = ShopOrder::where('id', $t->order_id)->first();
+            $u->status = 'Pending';
+            $u->save();
 
             return view('user.stripe', ['status' => 'error', 'session' => $session]);
         } catch (\Error $e) {
@@ -519,9 +522,9 @@ class OrderController extends Controller
                     if ($transaction) {
                         $transaction->status = 'Done';
                         $transaction->save();
-                        $transaction->order->update([
-                            'status' => 'Completed'
-                        ]);
+                        $order = ShopOrder::where('id', $transaction->order_id)->first();
+                        $order->status = 'Completed';
+                        $order->save();
                     }
 
                     //empty cart
@@ -536,9 +539,9 @@ class OrderController extends Controller
                     if ($transaction) {
                         $transaction->status = 'Pending';
                         $transaction->save();
-                        $transaction->order->update([
-                            'status' => 'Pending'
-                        ]);
+                        $order = ShopOrder::where('id', $transaction->order_id)->first();
+                        $order->status = 'Pending';
+                        $order->save();
                     }
 
                     break;
@@ -548,9 +551,9 @@ class OrderController extends Controller
                     if ($transaction) {
                         $transaction->status = 'Cancelled';
                         $transaction->save();
-                        $transaction->order->update([
-                            'status' => 'Cancelled'
-                        ]);
+                        $order = ShopOrder::where('id', $transaction->order_id)->first();
+                        $order->status = 'Cancelled';
+                        $order->save();
                     }
 
                     //empty cart
@@ -601,6 +604,9 @@ class OrderController extends Controller
                     if ($transaction) {
                         $transaction->status = 'Done';
                         $transaction->save();
+                        $order = ShopOrder::where('id', $transaction->order_id)->first();
+                        $order->status = 'Completed';
+                        $order->save();
                     }
 
                     //empty cart
@@ -615,6 +621,9 @@ class OrderController extends Controller
                     if ($transaction) {
                         $transaction->status = 'Pending';
                         $transaction->save();
+                        $order = ShopOrder::where('id', $transaction->order_id)->first();
+                        $order->status = 'Pending';
+                        $order->save();
                     }
 
                     break;
@@ -624,6 +633,9 @@ class OrderController extends Controller
                     if ($transaction) {
                         $transaction->status = 'Cancelled';
                         $transaction->save();
+                        $order = ShopOrder::where('id', $transaction->order_id)->first();
+                        $order->status = 'Cancelled';
+                        $order->save();
                     }
 
                     //empty cart

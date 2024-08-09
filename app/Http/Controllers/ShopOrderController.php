@@ -686,14 +686,16 @@ class ShopOrderController extends Controller
             }
             $order = ShopOrder::find($order_id);
             if ($order) {
-                $order->items->delete();
+                // $order->items->delete();
+                ShopOrderItem::where('order_id', $order->id)->delete();
                 $order->delete();
             }
             return back()->with(['error' => $response['message'] ?? 'Something went wrong']);
         } else {
             $order = ShopOrder::find($order_id);
             if ($order) {
-                $order->items->delete();
+                // $order->items->delete();
+                ShopOrderItem::where('order_id', $order->id)->delete();
                 $order->delete();
             }
             return back()->with(['error' => $response['message'] ?? 'Something went wrong']);
@@ -743,7 +745,8 @@ class ShopOrderController extends Controller
             return redirect('/')->with(['success' => 'Payment Successful !']);
         } else {
             if ($order) {
-                $order->items->delete();
+                // $order->items->delete();
+                ShopOrderItem::where('order_id', $order->id)->delete();
                 $order->delete();
             }
             return back()->with(['error' => $response['message'] ?? 'Something went wrong']);
@@ -800,7 +803,8 @@ class ShopOrderController extends Controller
         } else {
             $order = ShopOrder::find($order_id);
             if ($order) {
-                $order->items->delete();
+                // $order->items->delete();
+                ShopOrderItem::where('order_id', $order->id)->delete();
                 $order->delete();
             }
             return back()->with('error', 'Unable to fetch exchange rate. Please try again.');
@@ -857,7 +861,8 @@ class ShopOrderController extends Controller
         } else {
             $order = ShopOrder::find($order_id);
             if ($order) {
-                $order->items->delete();
+                ShopOrderItem::where('order_id', $order->id)->delete();
+                // $order->items->delete();
                 $order->delete();
             }
             // Payment failed
@@ -869,7 +874,8 @@ class ShopOrderController extends Controller
     {
         $order = ShopOrder::find($order_id);
         if ($order) {
-            $order->items->delete();
+            // $order->items->delete();
+            ShopOrderItem::where('order_id', $order->id)->delete();
             $order->delete();
         }
         return back()->with(['error' => $response['message'] ?? 'Payment Unsuccessfull']);

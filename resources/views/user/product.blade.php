@@ -957,7 +957,7 @@
                                                 src="/uploads/images/product/{{ $s->images->first()->product_image }}"
                                                 alt="{{ $s->product_name }}">
                                         @else --}}
-                                        <img id="" class="img-fluid w-100 img-thumbnail h-100"
+                                        <img id="" class="img-fluid w-100 img-thumbnail h-100" style="object-fit: contain;"
                                             src="/uploads/images/product/{{ $s->product_thumbnail }}"
                                             alt="{{ $s->product_name }}">
                                         {{-- @endif --}}
