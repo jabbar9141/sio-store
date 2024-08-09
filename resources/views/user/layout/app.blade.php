@@ -165,14 +165,32 @@
             getCities({{ (int) session('country_id') }})
         @endif
 
-        $('#delivery_country').on('change', function() {
-            console.log(this.value);
+        $('.delivery_country').on('change', function() {
+            if (this.id == 'delivery_country') {
+                $('#m_countries').val(this.value).trigger('change');
+            } else {
+                $('#delivery_country').val(this.value).trigger('change');
+            }
+            $('#delivery_city').empty();
+            $('#delivery_city_m').empty();
             if (this.value) {
                 getCities(this.value)
             }
         });
 
+        $('.delivery_city').on('change', function() {
+            if (this.id == 'delivery_city_m') {
+                $('#delivery_city').val(this.value).trigger('change');
+            } else {
+                $('#delivery_city_m').val(this.value).trigger('change');
+            }
+        });
+
         function getCities(country_id) {
+            let options = [];
+            $('#delivery_city').append(new Option('Select City', '', true, false));
+            $('#delivery_city_m').append(new Option('Select City', '', true, false));
+            // options.push(new Option('Select City', '', true, false));
             $.ajax({
                 type: "get",
                 url: "{{ route('delivery-city', ['country_id' => ':id']) }}".replace(':id', country_id),
@@ -180,19 +198,19 @@
                 dataType: "json",
                 success: function(response) {
                     let cities = response.cities;
-                    $('#delivery_city').empty();
-                    $('#delivery_city').append(new Option('Select City', '', true, false));
                     if (cities.length > 0) {
                         cities.forEach(city => {
-                            $('#delivery_city').append(new Option(city.name, city.id, false,
-                                false));
+                            $('#delivery_city').append(new Option(city.name, city.id, false, false));
+                            $('#delivery_city_m').append(new Option(city.name, city.id, false, false));
                         });
-                        @if (session('country_id'))
-                            let session_city_id = '{{ session('city_id') }}'
-                            $('#delivery_city').val(session_city_id).prop('selected', true).trigger(
-                                'change');
-                        @endif
                     }
+                    @if (session('country_id'))
+                        let session_city_id = '{{ session('city_id') }}'
+                        $('#delivery_city').val(session_city_id).prop('selected', true).trigger(
+                            'change');
+                        $('#delivery_city_m').val(session_city_id).prop('selected', true).trigger(
+                            'change');
+                    @endif
                 }
             });
         }

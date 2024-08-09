@@ -435,6 +435,6 @@ class HomeController extends Controller
             'delivery_city' => 'required',
         ]);
 
-        
+
     }
 }

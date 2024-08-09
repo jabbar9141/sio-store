@@ -75,8 +75,8 @@
                                         @php
                                             $countries = App\Models\Country::get();
                                         @endphp
-                                        <select class="form-control w-100" name="delivery_country" id="delivery_country"
-                                            required>
+                                        <select class="form-control w-100 delivery_country" name="delivery_country"
+                                            id="delivery_country" required>
                                             <option value="">Select Country</option>
                                             @foreach ($countries as $c)
                                                 <option value="{{ $c->id }}"
@@ -89,7 +89,7 @@
                                     </div>
                                     <div class="my-2 col-12">
                                         <select name="delivery_city" id="delivery_city" required
-                                            class="w-100 form-control">
+                                            class="w-100 form-control delivery_city">
                                             <option value="">Select City</option>
                                         </select>
                                     </div>
@@ -250,7 +250,7 @@
                     </a>
                 </div>
                 <div class="d-flex align-items-center">
-                    <a href="#" class="d-flex align-items-center" id="openButton">
+                    <a href="javascript:void(0)" class="d-flex align-items-center" id="openButton">
                         <i class="ri-menu-line"></i>
                     </a>
 
@@ -441,14 +441,28 @@
                 </div>
                 <div class=" mx-2 mt-3">
                     <div class="input-group input-group-sm">
-                        <input type="text" id="search_location_m" class="form-control location-picker"
-                            placeholder="Ship To..." value="{{ session('ship_to_str') }}">
-                        <div class="input-group-append">
-                            <span class="input-group-text bg-white border-left-0"><i
-                                    class="fas fa-map-marker-alt text-primary"></i></span>
-                        </div>
+                        <form id="delivery_details">
+                            <div class="mb-1">
+                                <select name="m_countries" id="m_countries" class="form-control delivery_country"
+                                    required>
+                                    <option value="">Select Country</option>
+                                    @foreach ($countries as $c)
+                                        <option value="{{ $c->id }}"
+                                            {{ (int) session('country_id') == $c->id ? 'selected' : '' }}>
+                                            {{ $c->name ?? $c->iso2 }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="mb-1">
+                                <select name="delivery_city" id="delivery_city_m" required
+                                    class="delivery_city form-control"></select>
+                            </div>
+                            <div class="text-center">
+                                <button class="btn btn-primary brn-sm rounded text-center">Submit</button>
+                            </div>
+                        </form>
                     </div>
-                    <div id="location_suggestions_m"></div>
+                    {{-- <div id="location_suggestions_m"></div> --}}
                 </div>
 
                 <ul>

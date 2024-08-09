@@ -686,7 +686,7 @@
                                                 <div class="d-flex align-items-center mt-2">
                                                     <h5 class="mb-0">{{ session()->get('session_symbol') ?? '€' }}
                                                         {{ number_format(App\MyHelpers::getPrice($i->product_price)) }}
-                                                        
+
                                                     </h5>
                                                 </div>
                                             </div>
