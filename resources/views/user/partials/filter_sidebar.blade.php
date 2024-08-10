@@ -36,6 +36,10 @@
                 padding-right: 3px !important;
                 padding-left: 6px !important; 
             }
+
+            .text-mobile{
+                font-size: 13px !important;
+            }
         }
     </style>
 
@@ -197,7 +201,7 @@
                                                         </div>
                                                     </div>
                                                     <div class="py-2">
-                                                        <a class="h6 text-decoration-none text-blue-400" href="{{ route('store.showProduct', $product->product_slug) }}">
+                                                        <a class="h6 text-decoration-none text-blue-400 text-mobile" href="{{ route('store.showProduct', $product->product_slug) }}">
                                                             @if (strlen($product->product_name) > 25)
                                                                 {{ substr($product->product_name, 0, 20) . '  ...  ' }}
                                                             @else
