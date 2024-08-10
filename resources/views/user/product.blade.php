@@ -454,6 +454,7 @@
                             @endphp
                             <span id="productPrice">{{ $price ?? 0 }}</span>
                         </h3>
+
                         <div>
 
 
@@ -461,7 +462,7 @@
                             <h6 id="shipping_cost_view" data-euro-shipping="{{ $shipping_cost }}">Shipping Fees:
                                 <b>{{ $shipping_cost > 0 ? App\MyHelpers::fromEuroView(session('currency_id', 0), $shipping_cost) : 'Shipping Cost not avilable for your sellected location' }}</b>
                             </h6>
-
+                            <h6>Weight: {{ $firstVariation->weight ?? 1 }} Kg.</h6>
                             {{-- @php
 
                                 $shipping_cost = ((array) json_decode($shipping_cost));

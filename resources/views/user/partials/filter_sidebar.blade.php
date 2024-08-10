@@ -228,12 +228,16 @@
                                                         } else {
                                                             $price = $product->product_price;
                                                         }
-                                                        $price = App\MyHelpers::fromEuroView(session('currency_id',0), $price);
+                                                        $price = App\MyHelpers::fromEuroView(
+                                                            session('currency_id', 0),
+                                                            $price,
+                                                        );
                                                     @endphp
                                                     <div
                                                         class="d-flex align-items-center justify-content-start mt-2 position-relative price-text">
                                                         <h5>{{ $price }}</h5>
                                                         <h6 class="text-muted ml-2">
+                                                            <span class="text-muted">Weight</span> {{ $firstVariation->weight ?? '1' }}
                                                             {{-- <del>{{ $price }}</del> --}}
                                                         </h6>
                                                     </div>
