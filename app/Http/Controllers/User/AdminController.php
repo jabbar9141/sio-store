@@ -59,25 +59,29 @@ class AdminController extends Controller
         }
     }
 
-    public function userRemove(Request $request)
+    public function userRemove(Request $request, $id)
     {
         try {
-            return DB::transaction(function () use ($request) {
-                $user = User::findOrFail($request->id);
+            return DB::transaction(function () use ($request, $id) {
+                $user = User::findOrFail($id);
                 $vendor = $user->vendor_shop;
                 if ($vendor) {
-                    $products = $vendor->products;
-                    if (count($products) > 0) {
-                        foreach ($products as $product) {
-                            $product->offers()->delete();
-                            $product->variations()->delete();
-                            $product->images()->delete();
-                            $product->reviews()->delete();
+                    $my_request = new Request([
+                        'id' => $vendor->vendor_id,
+                    ]);
+                    $this->vendorRemove($my_request);
+                    // $products = $vendor->products;
+                    // if (count($products) > 0) {
+                    //     foreach ($products as $product) {
+                    //         $product->offers()->delete();
+                    //         $product->variations()->delete();
+                    //         $product->images()->delete();
+                    //         $product->reviews()->delete();
 
-                            $product->delete();
-                        }
-                    }
-                    $vendor->delete();
+                    //         $product->delete();
+                    //     }
+                    // }
+                    // $vendor->delete();
                 }
                 if ($user->photo) {
                     MyHelpers::deleteImageFromStorage($user->photo, 'uploads/images/profile/');
@@ -106,6 +110,43 @@ class AdminController extends Controller
                 'success' => false,
             ]);
             // return redirect('admin-vendor-list')->with('error', 'Failed to remove this user.');
+        }
+    }
+
+    public function vendorRemove(Request $request)
+    {
+        try {
+            return DB::transaction(function () use ($request) {
+                $vendor = VendorShop::find((int)$request->id);
+                if ($vendor) {
+                    $products = $vendor->products;
+                    if (count($products) > 0) {
+                        foreach ($products as $product) {
+                            $product->offers()->delete();
+                            $product->variations()->delete();
+                            $product->images()->delete();
+                            $product->reviews()->delete();
+                            $product->delete();
+                        }
+                    }
+                    $vendor->delete();
+                    return response()->json([
+                        'msg' => "Vendor deleted successfully",
+                        'success' => true,
+                    ]);
+                } else {
+                    return response()->json([
+                        'msg' => "Vendor Not Found",
+                        'success' => false,
+                    ]);
+                }
+            });
+        } catch (\Throwable $th) {
+            return response()->json([
+                'msg' => "Error",
+                'success' => false,
+            ]);
+            return redirect()->back()->withErrors($th->getMessage());
         }
     }
 
@@ -169,6 +210,11 @@ class AdminController extends Controller
                 } else {
                     $str .= "<a class = 'btn btn-sm btn-danger' href='$url' onclick = 'return confirm(\" Are You sure?\")'>Remove as Vendor<a>";
                 }
+
+                $str .= "<hr>";
+                $url = route('admin-user-remove', $item->id);
+                $str .= "<a class = 'btn btn-sm btn-danger' href='javascript:void(0)' onclick = 'deleteUser(" . $item->id . ")'>Delete<a>";
+
 
                 return $str;
             })

@@ -11,7 +11,7 @@
         <div class="ps-3">
             <nav aria-label="breadcrumb">
                 <ol class="breadcrumb mb-0 p-0">
-                    <li class="breadcrumb-item"><a href="dashboard"><i class="bx bx-home-alt"></i></a>
+                    <li class="breadcrumb-item"><a href="{{ route('dashboard') }}"><i class="bx bx-home-alt"></i></a>
                     </li>
                     <li class="breadcrumb-item active" aria-current="page">Vendor List</li>
                 </ol>
@@ -38,13 +38,13 @@
                     <tbody>
                         @foreach ($data as $item)
                             <tr>
-                                <td>{{ $item->name }}</td>
-                                <td>{{ $item->email }}</td>
-                                <td>{{ MyHelpers::getDiffOfDate($item->created_at) }}</td>
+                                <td>{{ $item->user->name ?? '-' }}</td>
+                                <td>{{ $item->user->email ?? '-' }}</td>
+                                <td>{{ MyHelpers::getDiffOfDate($item->user->created_at ?? '-') }}</td>
                                 {{--                            <td>{{$item->status}}</td> --}}
                                 <td>
-                                    @if ($item->status)
-                                        <div class="badge rounded-pill bg-light-success text-success w-100">active</div>
+                                    @if ($item->user->status)
+                                        <div class="badge rounded-pill bg-light-success text-success w-100">Active</div>
                                     @else
                                         <div class="badge rounded-pill bg-light-danger text-danger w-100">Not active</div>
                                     @endif
@@ -52,11 +52,11 @@
                                 <td>
                                     <button type="button" class="btn btn-primary btn-sm radius-30 px-4"
                                         data-bs-toggle="modal"
-                                        data-bs-target="#exampleVerticallycenteredModal-{{ $item->id }}">View
+                                        data-bs-target="#exampleVerticallycenteredModal-{{ $item->user->id }}">View
                                         Details
                                     </button>
                                     <!-- Modal -->
-                                    <div class="modal fade" id="exampleVerticallycenteredModal-{{ $item->id }}"
+                                    <div class="modal fade" id="exampleVerticallycenteredModal-{{ $item->user->id }}"
                                         tabindex="-1" aria-hidden="true">
                                         <div class="modal-dialog modal-dialog-centered">
                                             <div class="modal-content">
@@ -66,37 +66,34 @@
                                                         aria-label="Close"></button>
                                                 </div>
                                                 <div class="modal-body">
-                                                    <img src="{{ url('uploads/images/profile/' . $item->photo) }}"
+                                                    <img src="{{ url('uploads/images/profile/' . $item->user->photo ?? '-') }}"
                                                         class="card-img-top"
                                                         style="max-width: 300px; margin-left:
                                                          10px">
                                                     <div class="card-body">
                                                         <h5 class="card-title">Name : <span
                                                                 style="font-weight:
-                                                         lighter">{{ $item->name }}</span>
+                                                         lighter">{{ $item->user->name ?? '-' }}</span>
                                                         </h5>
                                                         <h5 class="card-title">Email : <span
                                                                 style="font-weight:
-                                                         lighter">{{ $item->email }}</span>
+                                                         lighter">{{ $item->user->email ?? '-' }}</span>
                                                         </h5>
                                                         <h5 class="card-title">Username : <span
                                                                 style="font-weight:
-                                                         lighter">{{ $item->username }}</span>
+                                                         lighter">{{ $item->user->username ?? '-' }}</span>
                                                         </h5>
                                                         <h5 class="card-title">Address : <span
-                                                                style="font-weight:
-                                                         lighter">{{ $item->address ?:
-                                                             'No address
-                                                                                                                  ' }}</span>
+                                                                style="font-weight:lighter">{{ $item->user->address ?? 'No address' }}</span>
                                                         </h5>
                                                         <h5 class="card-title">Phone Number : <span
                                                                 style="font-weight:
-                                                         lighter">{{ $item->phone_number ?: 'No phone number' }}</span>
+                                                         lighter">{{ $item->user->phone_number ?? 'No phone number' }}</span>
                                                         </h5>
                                                         <h5 class="card-title">Status : <span
                                                                 style="font-weight:
                                                          lighter">
-                                                                @if ($item->status)
+                                                                @if ($item->user->status)
                                                                     <span style="color: lime">active</span>
                                                                 @else
                                                                     <span style="color: red">Not active</span>
@@ -119,10 +116,10 @@
                                     <form method="POST" action="{{ route('admin-activate-vendor') }}"
                                         class="active-deactive-form">
                                         @csrf
-                                        <input name="vendor_id" value="{{ $item->id }}" hidden />
-                                        <input name="current_status" value="{{ $item->status }}" hidden />
+                                        <input name="vendor_id" value="{{ $item->user->id }}" hidden />
+                                        <input name="current_status" value="{{ $item->user->status }}" hidden />
                                         <div class="form-check form-switch">
-                                            @if ($item->status)
+                                            @if ($item->user->status)
                                                 <input name="de_activate"
                                                     class="btn
                                             btn-outline-danger"
@@ -139,7 +136,8 @@
                                 </td>
                                 <td>
                                     <div class="d-flex order-actions">
-                                        <a href="javascript:void(0)" onclick="deleteVendor('{{ $item->id }}')">
+                                        <a href="javascript:void(0)"
+                                            onclick="deleteVendor('{{ $item->vendor_id }}')">
                                             <i class='bx bxs-trash'></i>
                                         </a>
                                     </div>
@@ -230,32 +228,52 @@
 
         function deleteVendor(vendorId) {
             event.preventDefault();
-            $.ajax({
-                url: "{{ route('admin-vendor-remove') }}",
-                method: 'POST',
-                data: {
-                    id: vendorId
-                },
-                headers: {
-                    'X-CSRF-TOKEN': "{{ csrf_token() }}",
-                },
-                dataType: 'json',
-                success: function(response) {
-                    Swal.fire({
-                        icon: 'success',
-                        title: response.msg,
-                        showDenyButton: false,
-                        showCancelButton: false,
-                        confirmButtonText: 'OK'
-                    }).then((result) => {
-                        window.location.reload();
+            Swal.fire({
+                title: 'Are you sure?',
+                text: "You won't be able to revert this!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Yes, delete it!'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.ajax({
+                        url: "{{ route('admin-vendor-remove') }}",
+                        method: 'POST',
+                        data: {
+                            id: vendorId
+                        },
+                        headers: {
+                            'X-CSRF-TOKEN': "{{ csrf_token() }}",
+                        },
+                        dataType: 'json',
+                        success: function(response) {
+                            Swal.fire({
+                                icon: 'success',
+                                title: response.msg,
+                                showDenyButton: false,
+                                showCancelButton: false,
+                                confirmButtonText: 'OK'
+                            }).then((result) => {
+                                window.location.reload();
+                            });
+                        },
+                        error: function(response) {
+                            console.log(response);
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error',
+                                showDenyButton: false,
+                                showCancelButton: false,
+                                confirmButtonText: 'OK'
+                            }).then((result) => {
+                                window.location.reload();
+                            });
+                        }
                     });
-                },
-                error: function(response) {
-
                 }
             });
         }
     </script>
-@endsection
 @endsection

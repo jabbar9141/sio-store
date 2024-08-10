@@ -4,6 +4,7 @@ use App\Http\Controllers\CurrencyController;
 use App\Http\Controllers\User\AdminController;
 use App\Http\Controllers\VendorPayoutController;
 use App\Models\User;
+use App\Models\VendorShop;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 
@@ -22,11 +23,13 @@ Route::middleware(['auth', 'auth.role:admin'])
         Route::view(
             'vendors',
             'backend.admin.all_vendors',
-            ['data' => User::where('role', '=', 'vendor')->get()]
+            [
+                'data' => VendorShop::with('user')->get()
+            ]
         )->name('vendor-list');
 
         Route::post('activate_vendor', 'vendorActivate')->name('activate-vendor');
-        Route::post('remove_vendor', 'userRemove')->name('vendor-remove');
+        Route::post('remove_vendor', 'vendorRemove')->name('vendor-remove');
 
         // users
         Route::get('user-list-page', 'userListPage')->name('user-list-page');
@@ -34,7 +37,7 @@ Route::middleware(['auth', 'auth.role:admin'])
 
         Route::get('activate_user/{user_id}', 'userActivate')->name('activate-user');
         Route::get('make_vendor/{user_id}', 'userMakeVendor')->name('make-vendor');
-        // Route::post('remove_user', 'userRemove')->name('user-remove');
+        Route::post('remove_user/{id}', 'userRemove')->name('user-remove');
 
         // product
         Route::get('product-list-page', 'productListPage')->name('product-list-page');

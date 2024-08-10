@@ -11,7 +11,7 @@
         <div class="ps-3">
             <nav aria-label="breadcrumb">
                 <ol class="breadcrumb mb-0 p-0">
-                    <li class="breadcrumb-item"><a href="dashboard"><i class="bx bx-home-alt"></i></a>
+                    <li class="breadcrumb-item"><a href="{{ route('dashboard') }}"><i class="bx bx-home-alt"></i></a>
                     </li>
                     <li class="breadcrumb-item active" aria-current="page">User List</li>
                 </ol>
@@ -32,7 +32,7 @@
                             <th>Joined Date</th>
                             <th>Status</th>
                             <th>View Details</th>
-                            <th>Activate</th>
+                            <th>Actions</th>
                         </tr>
                     </thead>
                 </table>
@@ -42,6 +42,41 @@
 @endsection
 @section('js')
     <script>
+        function deleteUser(id) {
+            Swal.fire({
+                title: 'Are you sure?',
+                text: "You won't be able to revert this!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Yes, delete it!'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.ajax({
+                        url: "{{ route('admin-user-remove', ['id' => ':id']) }}".replace(':id', id),
+                        type: "post",
+                        data: {
+                            _token: '{{ csrf_token() }}'
+                        },
+                        success: function(response) {
+                            Swal.fire({
+                                title: 'Deleted!',
+                                text: "User has been deleted !",
+                                icon: 'success',
+                                showCancelButton: true,
+                                confirmButtonColor: '#3085d6',
+                                cancelButtonColor: '#d33',
+                                confirmButtonText: 'Ok !'
+                            }).then((result) => {
+                                location.reload();
+                            });
+                        }
+                    });
+                }
+            });
+        }
+
         $('#data_table').DataTable({
             "dom": 'Bfrtip',
             "iDisplayLength": 50,

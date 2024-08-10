@@ -9,9 +9,10 @@
         <div class="ps-3">
             <nav aria-label="breadcrumb">
                 <ol class="breadcrumb mb-0 p-0">
-                    <li class="breadcrumb-item"><a href="dashboard"><i class="bx bx-home-alt"></i></a>
+                    <li class="breadcrumb-item"><a href="{{ route('dashboard') }}"><i class="bx bx-home-alt"></i></a>
                     </li>
-                    <li class="breadcrumb-item active" aria-current="page">City Details ({{ $country->name }})</li>
+                    <li class="breadcrumb-item active" aria-current="page">City Details
+                        ({{ $country->name ? '(' . $country->name . ')' : '' }})</li>
                 </ol>
             </nav>
         </div>
@@ -35,8 +36,8 @@
                     </div>
                     <div class="col-6">
                         <label for="percentage">Shipping Percentage <small class="text-danger">*</small></label>
-                        <input type="number" name="percentage" id="all_shipping_percentage" class="form-control" min="0" max="100"
-                            step="0.01" required>
+                        <input type="number" name="percentage" id="all_shipping_percentage" class="form-control"
+                            min="0" max="100" step="0.01" required>
                     </div>
                 </div>
 
