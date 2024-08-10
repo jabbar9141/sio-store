@@ -576,12 +576,33 @@ class AdminController extends Controller
             ->addColumn('name', function ($item) {
                 return ($item->name ?? 'N/A');
             })
-            ->addColumn('shipping_cost', function ($item) {
+            ->addColumn('shipping_percentage', function ($item) {
                 $shippingCost = CityShippingCost::where('city_id', $item->id)->where('country_id', $item->country_id)->first();
                 if (isset($shippingCost->percentage) && $shippingCost->percentage > 0) {
                     return $shippingCost->percentage . ' %';
                 }
                 return 'N/A';
+            })
+            ->addColumn('shipping_cost', function ($item) {
+                $shippingCost = CityShippingCost::where('city_id', $item->id)->where('country_id', $item->country_id)->first();
+                if (isset($shippingCost->percentage) && $shippingCost->percentage > 0) {
+                    $min = ShippingCost::where('country_iso_2', $item->country->iso2)->whereNotNull('cost')->where('weight', 1)->first();
+                    $max = ShippingCost::where('country_iso_2', $item->country->iso2)->whereNotNull('cost')->where('weight', 500)->first();
+
+                    $min_cost = number_format(($shippingCost->percentage * $min->cost ?? 1) / 100, 2);
+                    $max_cost = number_format(($shippingCost->percentage * $max->cost ?? 1) / 100, 2);
+                    return $min_cost . ' - ' . $max_cost;
+                }
+                return 'N/A';
+                // if ($item->shippingCosts && count($item->shippingCosts) > 0) {
+                //     // Return the minimum cost if available
+                //     $minCost = $item->shippingCosts->whereNotNull('cost')->min('cost');
+                //     return $minCost ?? 0;
+                // } else {
+                //     $shippingCost = ShippingCost::where('country_iso_2', $item->iso2)->whereNotNull('cost');
+                //     return ($shippingCost->min('cost') ?? 0) . ' - ' . ($shippingCost->max('cost') ?? 0);
+                // }
+                // return (($item->item ? ($item->item->product_price) : 'N/A'));
             })
             // ->addColumn('price', function ($item) {
             //     return (($item->item ? ($item->item->product_price) : 'N/A'));

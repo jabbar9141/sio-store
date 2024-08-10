@@ -56,7 +56,8 @@
                         <thead>
                             <th>#</th>
                             <th>Name</th>
-                            <th>Shipping Cost (&euro;)</th>
+                            <th>Shipping Percentage</th>
+                            <th>Shipping Cost (Min-Max &euro;)</th>
                             <th>Action</th>
                         </thead>
                     </table>
@@ -201,11 +202,11 @@
                     "data": "name"
                 },
                 {
+                    "data": "shipping_percentage"
+                },
+                {
                     "data": "shipping_cost"
                 },
-                // {
-                //     "data": "customer"
-                // },
                 // {
                 //     "data": "vendor"
                 // },
