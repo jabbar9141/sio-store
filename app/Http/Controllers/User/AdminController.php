@@ -24,6 +24,8 @@ use App\Models\ShopOrder;
 use App\Models\ShopOrderItem;
 use App\Models\ShopOrderPayment;
 use App\Models\VendorShop;
+use Exception;
+use GrahamCampbell\ResultType\Success;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Yajra\DataTables\Facades\DataTables;
@@ -508,15 +510,14 @@ class AdminController extends Controller
 
     public function allCountriesData()
     {
-        $items = Country::with('shippingCosts')->get();
-
-        // dd($items);
+        $items = Country::select('countries.id', 'countries.name', 'countries.iso2')
+            ->leftJoin('shipping_costs', 'countries.iso2', '=', 'shipping_costs.country_iso_2')
+            ->selectRaw('MIN(shipping_costs.cost) as min_cost, MAX(shipping_costs.cost) as max_cost')
+            ->groupBy('countries.id')
+            ->get();
 
         return DataTables::of($items)
             ->addIndexColumn()
-            // ->addColumn('order_id', function ($item) {
-            //     return ($item->order ? ($item->order->order_id) : 'N/A');
-            // })
             ->addColumn('name', function ($item) {
                 return ($item->name ?? 'N/A');
             })
@@ -524,25 +525,14 @@ class AdminController extends Controller
                 return (($item->iso2 ?? 'N/A'));
             })
             ->addColumn('shipping_cost', function ($item) {
-                if ($item->shippingCosts && count($item->shippingCosts) > 0) {
-                    // Return the minimum cost if available
-                    $minCost = $item->shippingCosts->whereNotNull('cost')->min('cost');
-                    return $minCost ?? 0;
-                } else {
-                    $shippingCost = ShippingCost::where('country_iso_2', $item->iso2)->whereNotNull('cost');
-                    return ($shippingCost->min('cost') ?? 0) . ' - ' . ($shippingCost->max('cost') ?? 0);
-                }
-                // return (($item->item ? ($item->item->product_price) : 'N/A'));
-            })
-            // ->addColumn('order_id', function ($item) {
-            //     return (($item->item ? ($item->order->order_id) : 'N/A'));
-            // })
-            // ->addColumn('status', function ($item) {
-            //     return $item->status;
-            // })
+                return ($item->min_cost ?? 0) . ' - ' . ($item->max_cost ?? 0);
+            })            
             ->addColumn('action', function ($item) {
                 $url = route('admin-country-details', $item->id);
-                return '<a href="' . $url . '" class="btn btn-info btn-sm" ><i class="fa fa-eye"></i> View</a>';
+                $weightUrl = route('admin-country-weight-details', $item->id);
+
+                return '<a href="' . $url . '" class="btn btn-info btn-sm" ><i class="fa fa-eye me-2"></i>City</a> 
+                        <a href="' . $weightUrl . '" class="btn btn-primary btn-sm" ><i class="fa fa-eye me-1"></i> weight</a>';
             })
             ->rawColumns(['action', 'shipping_cost'])
             ->make(true);
@@ -562,17 +552,22 @@ class AdminController extends Controller
         return view('backend/admin/country-details', $data);
     }
 
+    public function countryWeightDetails($id)
+    {
+        $country = Country::find($id);
+        $shippingCosts = ShippingCost::where('country_iso_2', $country->iso2)->get();
+        $data = [
+            'country' => $country,
+            'shippingCosts' => $shippingCosts ?? [],
+        ];
+        return view('backend/admin/country-weight-details', $data);
+    }
+
     public function cityList($country_id)
     {
         $items = city::where('country_id', $country_id)->get();
-
-        // dd($items);
-
         return DataTables::of($items)
             ->addIndexColumn()
-            // ->addColumn('order_id', function ($item) {
-            //     return ($item->order ? ($item->order->order_id) : 'N/A');
-            // })
             ->addColumn('name', function ($item) {
                 return ($item->name ?? 'N/A');
             })
@@ -586,33 +581,20 @@ class AdminController extends Controller
             ->addColumn('shipping_cost', function ($item) {
                 $shippingCost = CityShippingCost::where('city_id', $item->id)->where('country_id', $item->country_id)->first();
                 if (isset($shippingCost->percentage) && $shippingCost->percentage > 0) {
-                    $min = ShippingCost::where('country_iso_2', $item->country->iso2)->whereNotNull('cost')->where('weight', 1)->first();
-                    $max = ShippingCost::where('country_iso_2', $item->country->iso2)->whereNotNull('cost')->where('weight', 500)->first();
+                    $min = ShippingCost::where('country_iso_2', $item->country->iso2)->whereNotNull('cost')->orderBy('id', "asc")->first();
+                    $max = ShippingCost::where('country_iso_2', $item->country->iso2)->whereNotNull('cost')->orderBy('id', 'desc')->first();
 
                     $min_cost = number_format(($shippingCost->percentage * $min->cost ?? 1) / 100, 2);
                     $max_cost = number_format(($shippingCost->percentage * $max->cost ?? 1) / 100, 2);
                     return $min_cost . ' - ' . $max_cost;
                 }
                 return 'N/A';
-                // if ($item->shippingCosts && count($item->shippingCosts) > 0) {
-                //     // Return the minimum cost if available
-                //     $minCost = $item->shippingCosts->whereNotNull('cost')->min('cost');
-                //     return $minCost ?? 0;
-                // } else {
-                //     $shippingCost = ShippingCost::where('country_iso_2', $item->iso2)->whereNotNull('cost');
-                //     return ($shippingCost->min('cost') ?? 0) . ' - ' . ($shippingCost->max('cost') ?? 0);
-                // }
-                // return (($item->item ? ($item->item->product_price) : 'N/A'));
             })
-            // ->addColumn('price', function ($item) {
-            //     return (($item->item ? ($item->item->product_price) : 'N/A'));
-            // })
-            // ->addColumn('order_id', function ($item) {
-            //     return (($item->item ? ($item->order->order_id) : 'N/A'));
-            // })
-            // ->addColumn('status', function ($item) {
-            //     return $item->status;
-            // })
+            ->addColumn('weight', function ($item) {
+                $min = ShippingCost::where('country_iso_2', $item->country->iso2)->whereNotNull('cost')->orderBy('id', "asc")->first();
+                $max = ShippingCost::where('country_iso_2', $item->country->iso2)->whereNotNull('cost')->orderBy('id', 'desc')->first();
+                return ($min->weight ?? 0) . ' - ' . ($max->weight ?? 0);
+            })
             ->addColumn('action', function ($item) {
 
                 return '<a href="javascript:void(0)" onclick="addShippingCost(' . $item->id . ')" class="btn btn-info btn-sm" ><i class="fa fa-eye"></i> View</a>';
@@ -620,6 +602,34 @@ class AdminController extends Controller
             ->rawColumns(['action'])
             ->make(true);
     }
+
+
+
+    public function weightList($country_id)
+    {
+        $country = Country::find($country_id);
+        $items = ShippingCost::where('country_iso_2', $country->iso2)->get();
+
+        return DataTables::of($items)
+            ->addIndexColumn()
+            ->addColumn('name', function ($item) {
+                return ($item->country_name ?? 'N/A');
+            })
+            ->addColumn('cost', function ($item) {
+                return ($item->cost ?? 'N/A');
+            })
+            ->addColumn('weight', function ($item) {
+                return ($item->weight ?? 'N/A');
+            })
+            ->addColumn('action', function ($item) {
+
+                return '<a href="javascript:void(0)" onclick="addWeightCost(' . $item->id . ')" class="btn btn-info btn-sm" ><i class="fa fa-eye"></i> Edit Cost</a>';
+            })
+            ->rawColumns(['action'])
+            ->make(true);
+    }
+
+
 
     public function cityCost($city_id)
     {
@@ -639,6 +649,27 @@ class AdminController extends Controller
             ]);
         }
     }
+
+    public function weightCost($shipping_cost_id)
+    {
+        $shippingCost = ShippingCost::find($shipping_cost_id);
+        if ($shippingCost) {
+            $shippingCost = ShippingCost::where('id', $shipping_cost_id)->first();
+            return response()->json([
+                'success' => true,
+                'shippingCost' => $shippingCost->cost ?? 0,
+                'shippingId' => $shippingCost->id ?? 0
+
+            ]);
+        } else {
+            return response()->json([
+                'success' => false,
+                'message' => 'Shiping Address not found'
+            ]);
+        }
+    }
+
+
 
     public function saveCost(Request $request, $id)
     {
@@ -698,6 +729,23 @@ class AdminController extends Controller
                 }
             }
         });
+    }
+
+    public function updateCost(Request $request)
+    {
+
+        try {
+            $request->validate([
+                'cost' => 'required|numeric|min:0',
+            ]);
+            ShippingCost::where('id', $request->shipping_id)->update([
+                'cost' => $request->cost,
+            ]);
+
+            return back()->with(['success' => 'Cost updated Successfully !']);
+        } catch (Exception $e) {
+            return redirect()->back()->withErrors('Something went wrong in updating cost');
+        }
     }
 
     public function showAllOrders($order_item_id)

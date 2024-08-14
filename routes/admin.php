@@ -49,9 +49,17 @@ Route::middleware(['auth', 'auth.role:admin'])
         Route::get('country-list', 'country')->name('country-list');
         Route::get('country-data', 'allCountriesData')->name('country-data');
         Route::get('country-details/{id}', 'countryDetails')->name('country-details');
+        Route::get('country-weight-details/{id}', 'countryWeightDetails')->name('country-weight-details');
+
         Route::get('city-list/{country_id}', 'cityList')->name('city-list');
+        Route::get('weight-list/{country_id}', 'weightList')->name('weight-list');
+
         Route::post('shipping-cost/{id}', 'saveCost')->name('shipping-cost');
+        Route::post('shipping-cost-update', 'UpdateCost')->name('shipping-cost-update');
+
         Route::get('city-cost/{id}', 'cityCost')->name('city-cost');
+        Route::get('weight-cost/{id}', 'weightCost')->name('weight-cost');
+
 
         //orders
         Route::get('allOrders', 'allOrders')->name('allOrders');

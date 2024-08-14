@@ -1266,7 +1266,7 @@ class ProductController extends Controller
             return response()->json([
                 'success' => true,
                 'product_variation' => $productVariation,
-                'product_images' => isset($productVariation->image_url) && count(json_decode($productVariation->image_url)) > 0 ? json_decode($productVariation->image_url) : $product?->product_thumbnail,
+                'product_images' => isset($productVariation->image_url) && count(json_decode($productVariation->image_url)) > 0 ? json_decode($productVariation->image_url) : [$product?->product_thumbnail],
                 'video_url' => json_decode($productVariation->video_url),
                 'formatedPrice' => MyHelpers::fromEuroView($currency_id, $productVariation->price),
                 'shipping_cost_in_euro' => $shipping_cost,

@@ -11,7 +11,7 @@
                 <ol class="breadcrumb mb-0 p-0">
                     <li class="breadcrumb-item"><a href="{{ route('dashboard') }}"><i class="bx bx-home-alt"></i></a>
                     </li>
-                    <li class="breadcrumb-item active" aria-current="page">City Details
+                    <li class="breadcrumb-item active" aria-current="page">Weight Details
                         ({{ $country->name ? '(' . $country->name . ')' : '' }})</li>
                 </ol>
             </nav>
@@ -19,7 +19,7 @@
     </div>
     <!--end breadcrumb -->
 
-    <div class="card mb-3">
+    {{-- <div class="card mb-3">
         <div class="card-body">
             <form action="{{ route('admin-shipping-cost', ['id' => $country->id]) }}" method="POST">
                 @csrf
@@ -46,19 +46,18 @@
                 </div>
             </form>
         </div>
-    </div>
+    </div> --}}
 
     <div class="card">
         <div class="card-body row">
             <div class="col-12">
                 <div class="table-responsive">
-                    <table class="table" id="countries_table">
+                    <table class="table" id="countries__weight_table">
                         <thead>
                             <th>#</th>
                             <th>Name</th>
-                            <th>Shipping Percentage</th>
-                            <th>Weight (Min-Max Kg)</th>
-                            <th>Shipping Cost (Min-Max &euro;)</th>
+                            <th>Weight</th>
+                            <th>Cost</th>
                             <th>Action</th>
                         </thead>
                     </table>
@@ -81,14 +80,14 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <form action="{{ route('admin-shipping-cost', ['id' => $country->id]) }}" id="city_shipping_cost_form"
+                    <form action="{{ route('admin-shipping-cost-update') }}" id="city_shipping_cost_form"
                         method="POST">
                         @csrf
-                        <input type="hidden" name="city_id">
+                        <input type="hidden" name="shipping_id">
                         <div class="col-12 mb-3">
-                            <label for="percentage">Shipping Percentage</label>
-                            <input type="number" name="percentage" id="shipping_percentage" class="form-control"
-                                min="0" max="100" step="0.01" required>
+                            <label for="percentage">Shipping Cost</label>
+                            <input type="number" name="cost" id="shipping_cost" class="form-control"
+                                min="0" step="0.01" required>
                         </div>
 
                         <div class="text-end">
@@ -110,24 +109,22 @@
         const options = {};
 
         // Initialize the modal with options
-        const myModal = new bootstrap.Modal(
-            document.getElementById("shipping_cost_modal"),
-            options
-        );
+        // const myModal = new bootstrap.Modal(
+        //     document.getElementById("shipping_cost_modal"),
+        //     options
+        // );
 
-        function addShippingCost(city_id) {
+        function addWeightCost(shippingCostId) {
             $.ajax({
                 type: "get",
-                url: "{{ route('admin-city-cost', ['id' => ':id']) }}".replace(':id', city_id),
+                url: "{{ route('admin-weight-cost', ['id' => ':id']) }}".replace(':id', shippingCostId),
                 data: "",
                 dataType: "json",
                 success: function(response) {
                     if (response.success) {
-                        $('input[name="city_id"]').val(city_id);
-                        $('#modalTitleId').text(response.city_name ?? 'Update Percentage');
-                        $('#shipping_percentage').val(response.shipping_percentage ?? 0);
-                        // $('#shipping_cost_modal').modal('show');
-                        myModal.show();
+                        $('input[name="shipping_id"]').val(response.shippingId);
+                        $('#shipping_cost').val(response.shippingCost ?? 0);
+                       $('#shipping_cost_modal').modal('show');
 
                     } else {
                         Swal.fire({
@@ -140,50 +137,8 @@
             });
         }
 
-        $('#city_shipping_cost_form').on('submit', function(e) {
-            e.preventDefault();
-            var form = $(this);
-            $.ajax({
-                type: form.attr('method'),
-                url: form.attr('action'),
-                data: form.serialize(),
-                dataType: 'json',
-                success: function(response) {
-                    if (response.success) {
-                        Swal.fire({
-                            icon: 'success',
-                            title: 'Shipping Cost Updated Successfully',
-                            showDenyButton: false,
-                            showCancelButton: false,
-                            confirmButtonText: 'OK'
-                        }).then((result) => {
-                            window.location.reload();
-                        });
-                    } else {
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'Failed to update shipping cost',
-                            showDenyButton: false,
-                            showCancelButton: false,
-                            confirmButtonText: 'OK'
-                        });
-                    }
-                },
-                error: function(xhr, status, error) {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Failed to update shipping cost',
-                        showDenyButton: false,
-                        showCancelButton: false,
-                        confirmButtonText: 'OK'
-                    })
-                }
-            })
-        })
 
-        $('.select2').select2();
-
-        $('#countries_table').DataTable({
+        $('#countries__weight_table').DataTable({
             "dom": 'Bfrtip',
             "iDisplayLength": 50,
             "lengthMenu": [
@@ -193,7 +148,7 @@
             "processing": false,
             "serverSide": true,
             "ajax": {
-                "url": "{{ route('admin-city-list', ['country_id' => $country->id]) }}",
+                "url": "{{ route('admin-weight-list', ['country_id' => $country->id]) }}",
                 "type": "GET"
             },
             "columns": [{
@@ -202,22 +157,14 @@
                 {
                     "data": "name"
                 },
-                {
-                    "data": "shipping_percentage"
-                },
+               
                 {
                     "data": "weight"
                 },
                 {
-                    "data": "shipping_cost"
+                    "data": "cost"
                 },
-                
-                // {
-                //     "data": "price"
-                // },
-                // {
-                //     "data": "status"
-                // },
+               
                 {
                     "data": "action"
                 }

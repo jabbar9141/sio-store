@@ -41,13 +41,14 @@
     <script>
         $('#countries_table').DataTable({
             "dom": 'Bfrtip',
-            "iDisplayLength": 50,
+            "iDisplayLength": 30,
             "lengthMenu": [
                 [10, 25, 50, 100, -1],
                 [10, 25, 50, 100, "All"]
             ],
-            "processing": false,
-            "serverSide": true,
+            "processing": true, // Show processing indicator
+            "serverSide": true, // Enable server-side processing
+            "deferRender": true, // Defer rendering until necessary
             "ajax": {
                 "url": "{{ route('admin-country-data') }}",
                 "type": "GET"
@@ -64,15 +65,6 @@
                 {
                     "data": "shipping_cost"
                 },
-                // {
-                //     "data": "vendor"
-                // },
-                // {
-                //     "data": "price"
-                // },
-                // {
-                //     "data": "status"
-                // },
                 {
                     "data": "action"
                 }

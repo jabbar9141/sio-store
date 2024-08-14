@@ -1180,7 +1180,7 @@
                 dataType: "json",
                 success: function(response) {
                     if (response.success) {
-                        console.log(response.product_variation.id);
+                        console.log(response);
                         $("#productVariationId").val(response.product_variation.id);
 
                         $('#ProductImage').show();

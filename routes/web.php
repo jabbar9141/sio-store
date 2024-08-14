@@ -153,7 +153,9 @@ Route::get('/payment-success-sumup', [OrderController::class, 'handleSumUpWebhoo
 Route::get('payment-complete-sumup/{order_id_ref}', [OrderController::class, 'payment_complete_sumup'])->name('payment_complete_sumup'); //the payment status page
 Route::get('payment-complete-sumup-mobile/{order_id_ref}', [OrderController::class, 'payment_complete_sumup_mobile'])->name('payment_complete_sumup_mobile');
 
-
+Route::get('/payment/callback', [ShopOrderController::class, 'paymentCallback'])->name('sumup.payment.callback');
+Route::get('/payment/process', [ShopOrderController::class, 'processPayment'])->name('sumup.payment.process');
+Route::put('/update-checkout/{checkoutId}', [ShopOrderController::class, 'updateCheckout']);
 //address
 Route::resource('address', AddressController::class)->middleware(['auth']);
 
