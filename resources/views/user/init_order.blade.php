@@ -193,8 +193,8 @@
                                 </div> --}}
                                 <div class="custom-control custom-radio ">
                                     <input type="radio" class="custom-control-input" name="payment" id="sumup"
-                                        value="SUMUP" required checked>
-                                    <label class="custom-control-label" for="sumup">SumUp</label>
+                                        value="STRIPE" required checked>
+                                    <label class="custom-control-label" for="sumup">Stripe</label>
                                 </div>
 
                                 <div class="custom-control custom-radio mx-4">

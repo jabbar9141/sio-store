@@ -2,7 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\city;
+use App\Models\Country;
 use App\Models\Currency;
+use Illuminate\Http\Client\ResponseSequence;
 use Illuminate\Http\Request;
 
 class CurrencyController extends Controller
@@ -19,7 +22,6 @@ class CurrencyController extends Controller
         ];
 
         return view('backend.admin.currency.index', $data);
-
     }
 
     /**
@@ -65,7 +67,6 @@ class CurrencyController extends Controller
                 'msg' => 'Something went wrong'
             ]);
         }
-
     }
 
     /**
@@ -140,6 +141,78 @@ class CurrencyController extends Controller
                 'success' => false,
                 'msg' => 'Something went wrong'
             ]);
+        }
+    }
+
+    public function getAllCurrencies()
+    {
+        try {
+            $currencies = Currency::select(
+                'id',
+                'main_currency',
+                'country',
+                'country_code',
+                'currency_symbol',
+                'currency_rate',
+                'status'
+            )->get();
+            return response()->json([
+                'status' => true,
+                'data' => $currencies
+            ], 200);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'data' => $th->getMessage()
+            ], 500);
+        }
+    }
+
+
+    public function getAllCountries()
+    {
+        try {
+            $countries = Country::select(
+                'id',
+                'name',
+                'iso2',
+                'iso3',
+                'currency_symbol',
+            )->get();
+            return response()->json([
+                'status' => true,
+                'data' => $countries
+            ], 200);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'data' => $th->getMessage()
+            ], 500);
+        }
+    }
+
+
+    public function getAllCitiesOfCountry($countryId)
+    {
+        try {
+            $country = Country::find($countryId);
+            $countries = city::select(
+                'id',
+                'name',
+                'state_id',
+                'country_id',
+                'state_code',
+                'country_code'
+            )->where('country_id',$country->id)->get();
+            return response()->json([
+                'status' => true,
+                'data' => $countries
+            ], 200);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'data' => $th->getMessage()
+            ], 500);
         }
     }
 }

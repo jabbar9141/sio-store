@@ -12,6 +12,7 @@ use App\Http\Controllers\API\ProductReviewsController;
 use App\Http\Controllers\API\ShippingFee;
 use App\Http\Controllers\API\VendorController;
 use App\Http\Controllers\API\WishlistController;
+use App\Http\Controllers\CurrencyController;
 use App\Http\Controllers\ProductController as ControllersProductController;
 use App\Mail\AddProductEmail;
 use App\Mail\ContactUsMail;
@@ -135,9 +136,11 @@ Route::controller(WishlistController::class)->middleware(['auth:api'])->prefix('
     Route::post('removeItem', 'removeItem');
 });
 
-Route::controller(ProductReviewsController::class)->middleware(['auth:api'])->prefix('reviews')->group(function () {
+Route::controller(ProductReviewsController::class)->prefix('reviews')->group(function () {
     Route::get('my-reviews', 'myReviews');
     Route::post('post-review', 'store');
+    Route::get('product-reviews/{product_id}', 'getProductReviews');
+
     Route::put('update-review/{review_id}', 'update');
     Route::delete('delete-review/{review_id}', 'destroy');
 });
@@ -145,3 +148,8 @@ Route::controller(ProductReviewsController::class)->middleware(['auth:api'])->pr
 Route::controller(ProductReviewsController::class)->prefix('reviews')->group(function () {
     Route::get('product-review/{product_id}', 'productReviews');
 });
+
+Route::get('currencies',[CurrencyController::class, 'getAllCurrencies']);
+Route::get('countries',[CurrencyController::class, 'getAllCountries']);
+Route::get('city/{country_id}',[CurrencyController::class, 'getAllCitiesOfCountry']);
+

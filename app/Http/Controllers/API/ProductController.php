@@ -27,13 +27,11 @@ class ProductController extends Controller
 
             // Start building the query to fetch products
             $query = ProductModel::with(['images', 'sub_category', 'category', 'brand', 'vendor',])
-                ->where('product_status', 1)->where('admin_approved', 1)->where('product_quantity', '>', 0)
+                ->where('product_status', 1)->where('admin_approved', 1)->withWhereHas('variations',function($query){
+                    $query->where('product_quantity','>',0);
+                })
                 ->withCount('reviews')
-                ->addSelect([
-                    'reviews_avg' => ProductReview::select(DB::raw('AVG(rating)'))
-                        ->whereColumn('product_id', 'product.product_id')
-                        ->limit(1)
-                ]);
+                ->withAvg('reviews', 'rating');
 
             // Apply filtering
             if ($request->has('filter_column') && $request->has('filter_value')) {
@@ -97,8 +95,10 @@ class ProductController extends Controller
     public function show(Request $request, $product_id)
     {
         try {
-            $p = ProductModel::with(['images', 'sub_category', 'category', 'brand', 'vendor', 'reviews.user'])
-                ->where('product_status', 1)->where('admin_approved', 1)->where('product_quantity', '>', 0)
+            $p = ProductModel::with(['images', 'sub_category', 'category', 'brand', 'vendor', 'reviews.user','variations'])->withAvg('reviews', 'rating')
+                ->where('product_status', 1)->where('admin_approved', 1)->withWhereHas('variations',function($query){
+                    $query->where('product_quantity','>',0);
+                })
                 ->withCount('reviews')
                 ->addSelect([
                     'reviews_avg' => ProductReview::select(DB::raw('AVG(rating)'))
@@ -106,6 +106,7 @@ class ProductController extends Controller
                         ->limit(1)
                 ])
                 ->find($product_id);
+
 
             return response()->json([
                 'data' => $p
@@ -132,8 +133,10 @@ class ProductController extends Controller
         $page = $request->input('page', 1);
 
         $product = ProductModel::find($product_id);
-        $similar = ProductModel::with(['images', 'sub_category', 'category', 'brand', 'vendor', 'reviews.user'])
-            ->where('product_status', 1)->where('admin_approved', 1)->where('product_quantity', '>', 0)
+        $similar = ProductModel::with(['images', 'sub_category', 'category', 'brand', 'vendor', 'reviews.user'])->withAvg('reviews', 'rating')
+            ->where('product_status', 1)->where('admin_approved', 1)->withWhereHas('variations',function($query){
+                $query->where('product_quantity','>',0);
+            })
             ->where(function ($query) use ($product) {
                 $query->where('product_name', 'like', '%' . $product->product_name . '%')
                     ->orWhere('product_short_description', 'like', '%' . $product->product_short_description . '%')
@@ -165,10 +168,13 @@ class ProductController extends Controller
         $perPage = $request->input('per_page', 10);
         $page = $request->input('page', 1);
 
-        $similar = ProductModel::with(['images', 'sub_category', 'category', 'brand', 'vendor', 'reviews.user'])
-            ->where('product_status', 1)->where('admin_approved', 1)->where('product_quantity', '>', 0)
+        $similar = ProductModel::with(['images', 'sub_category', 'category', 'brand', 'vendor', 'reviews.user'])->withAvg('reviews', 'rating')
+            ->where('product_status', 1)->where('admin_approved', 1)->withWhereHas('variations',function($query){
+                $query->where('product_quantity','>',0);
+            })
             ->orderBy('created_at', 'DESC')
             ->paginate($perPage, ['*'], 'page', $page);
+
 
         return response()->json([
             'data' => $similar->items(),

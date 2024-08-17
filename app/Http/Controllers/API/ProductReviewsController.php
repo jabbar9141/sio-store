@@ -139,20 +139,25 @@ class ProductReviewsController extends Controller
      */
     public function store(Request $request)
     {
+        
+
         $request->validate([
             'rating' => 'required|min:1|max:5',
             'product_id' => 'required'
         ]);
 
+      
         try {
             $review = new ProductReview();
-            $review->user_id = auth()->guard('api')->id();
+            $review->user_id = auth()->guard('api')->id() ?? null;
             $review->product_id = $request->input('product_id'); // Retrieve product ID from the form
             $review->rating = $request->input('rating');
             $review->comment = $request->input('comment');
+            $review->username = $request->input('username');
+
             $review->save();
 
-            return response()->json(['message' => "Review sumitted", "data" => $review]);
+            return response()->json(['message' => "Review submitted", "data" => $review]);
         } catch (Exception $e) {
             Log::error($e->getMessage(), [$e]);
             return response()->json(['error' => "Failed to submit, please try again later."], 500);
@@ -212,4 +217,24 @@ class ProductReviewsController extends Controller
             return response()->json(['error' => 'Failed to delete review. Please try again later.']);
         }
     }
+
+
+    public function getProductReviews($productId){
+        try {
+            $productReviews = ProductReview::where('product_id', $productId)->get();
+            return response()->json([
+                'status' => true,
+                'data' => $productReviews
+            ],200);
+        } catch (\Throwable $th) {
+            return response()->json([
+                'status' => false,
+                'data' => $th->getMessage()
+            ],500);
+        }
+
+    }
+
+
+    
 }

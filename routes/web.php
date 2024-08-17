@@ -102,7 +102,7 @@ Route::get('/null-variations', function () {
 //     return 'Cache cleared';
 // });
 
-Route::get('/', [HomeController::class, 'index']);
+// Route::get('/', [HomeController::class, 'index']);
 Route::get('/', [HomeController::class, 'index'])->name('home-page');
 Route::get('/dashboard', [HomeController::class, 'dashboard'])->name('dashboard');
 Route::post('get-in-touch', [HomeController::class, 'getInTouch'])->name('get-in-touch');
@@ -148,6 +148,9 @@ Route::post('store/create/label/item/{item_id}', [ShopOrderController::class, 'c
 
 Route::get('/payment-success', [ShopOrderController::class, 'payment_success'])->name('payment-success');
 Route::get('/payment-error', [ShopOrderController::class, 'payment_error'])->name('payment-error');
+
+Route::post('/payment', [ShopOrderController::class, 'payment'])->name('payment');
+
 
 Route::get('/payment-success-sumup', [OrderController::class, 'handleSumUpWebhook'])->name('payment_success_sumup'); //the webhook
 Route::get('payment-complete-sumup/{order_id_ref}', [OrderController::class, 'payment_complete_sumup'])->name('payment_complete_sumup'); //the payment status page

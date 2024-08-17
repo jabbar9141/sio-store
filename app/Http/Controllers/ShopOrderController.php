@@ -387,7 +387,8 @@ class ShopOrderController extends Controller
             // dd($order->items);
             // DB::beginTransaction();
 
-            if ($request->payment == "STRIPE") {
+            if ($request->payment == "STRI") {
+                dd('str');
                 $items = [];
 
                 foreach ($order->items as $it) {
@@ -446,14 +447,31 @@ class ShopOrderController extends Controller
                 $lp->save();
 
                 //empty cart
+                // $cart = Cart::where('user_id', Auth::id())->where('status', 1)->first();
+                // $cart->status = 0;
+                // $cart->save();
+                // session()->forget('cart');
+
+                DB::commit();
+                //send them to stripe hosted checout page
+                return redirect()->away($checkout_session->url);
+            } else if ($request->payment == "STRIPE") {
+                $cost = 0;
+                foreach ($order->items as $it) {
+                    $price = $it->total_price ?? 0; //
+                    if ($price == 0) {
+                        $price = $it->variation->price * $it->qty;
+                    }
+                    $cost = $cost + ($price);
+                }
+                $cost = $cost + ($order->shipping_cost);
+
                 $cart = Cart::where('user_id', Auth::id())->where('status', 1)->first();
                 $cart->status = 0;
                 $cart->save();
                 session()->forget('cart');
 
-                DB::commit();
-                //send them to stripe hosted checout page
-                return redirect()->away($checkout_session->url);
+                return view('user.complete_order', ['order_id' => $order->id,  'cost' => $cost]);
             } elseif ($request->payment == "SUMUP") {
                 $cost = 0;
 
@@ -465,8 +483,7 @@ class ShopOrderController extends Controller
                     $cost = $cost + ($price);
                 }
 
-                //one last item to represent the shipping costs
-                // $cost = $cost + ($order->shipping_cost[strtolower($request->shipping_provider)] * 100);
+             
                 $cost = $cost + ($order->shipping_cost);
 
                 try {
@@ -565,6 +582,55 @@ class ShopOrderController extends Controller
             Log::error($e->getMessage(), [$e]);
             return back()->with(['error' => "Failed to initiate payment, please try again later"]);
         }
+    }
+
+
+
+
+    public function payment(Request $request)
+    {  
+        try {
+            $price = (float) $request->price;
+            \Stripe\Stripe::setApiKey(env('STRIPE_SECRET'));
+            $token = $request->stripeToken;
+            $charge = \Stripe\Charge::create([
+                'amount' => $price * 100,
+                'currency' => 'EUR',
+                'description' => 'Example charge',
+                'source' => $token,
+            ]);
+            if (!empty($charge) && $charge['status'] == 'succeeded') {
+                
+                $u = ShopOrder::where('id', $request->order_id)->first();
+                $u->status = 'Completed';
+                $u->save();
+
+                $lp = new ShopOrderPayment;
+                $lp->ref = $token;
+                $lp->payment_method = 'STRIPE';
+                $lp->order_id = $u->id;
+                $lp->amount = $request->price;
+                $lp->metadata = $u->metadata;
+                $lp->status = 'Done';
+                $lp->save();
+                return redirect()->route('home-page')->with(['success' => 'Payment Successful !']);
+            } else {
+                dd(false);
+                ShopOrderItem::where('order_id', $request->order_id)->delete();
+                ShopOrderPayment::where('order_id', $request->order_id)->delete();
+                ShopOrder::where('id', $request->order_id)->delete();
+                return redirect()->route('home-page')->with(['error' => $response['message'] ?? 'Something went wrong']);
+            }
+        } catch (\Throwable $th) {
+            ShopOrderItem::where('order_id', $request->order_id)->delete();
+            ShopOrderPayment::where('order_id', $request->order_id)->delete();
+            ShopOrder::where('id', $request->order_id)->delete();
+            return back()->with(['error' => $response['message'] ?? 'Something went wrong']);
+        return redirect()->route('home-page')->with(['error' => $response['message'] ?? 'Something went wrong']);
+        }
+
+
+      
     }
 
     public function payment_success(Request $request)
