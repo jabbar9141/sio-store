@@ -79,6 +79,7 @@ Route::controller(ProductController::class)->prefix('products')->group(function 
     Route::get('featured', 'featured');
     Route::get('recent', 'recent');
     Route::get('announcements', 'announcements');
+    Route::post('getVariationDetails', 'getVariationDetails');
 });
 
 Route::controller(CartController::class)->prefix('cart')->group(function () {
@@ -90,6 +91,8 @@ Route::controller(CartController::class)->prefix('cart')->group(function () {
 Route::controller(ShippingFee::class)->prefix('shipping')->group(function () {
     Route::get('estimateItemShippingCost', 'estimateItemShippingCost');
     Route::get('estimateItemShippingCostByCity', 'estimateItemShippingCostByCity');
+    Route::post('getShippingCost', 'getShippingCost');
+
 });
 
 

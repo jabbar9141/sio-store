@@ -4,8 +4,13 @@ namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
 use App\Models\Announcement;
+use App\Models\CityShippingCost;
+use App\Models\Country;
 use App\Models\product\ProductModel;
 use App\Models\ProductReview;
+use App\Models\ProductVariation;
+use App\Models\ShippingCost;
+use App\MyHelpers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -200,5 +205,109 @@ class ProductController extends Controller
             'next_page_url' => $ann->nextPageUrl(),
             'previous_page_url' => $ann->previousPageUrl()
         ]);
+    }
+
+    public function getVariationDetails(Request $request)
+    {   
+        try {
+            $country_id = $request->country_id;
+            $city_id = $request->city_id;
+            $currency_id = $request->currency_id;
+            $product = ProductModel::find($request->product_id);
+            $query = ProductVariation::query();
+            $query->where('product_id', $request->product_id);
+            if ($request->filled('color_name')) {
+                $query->where('color_name', $request->color_name);
+            }
+    
+            if ($request->filled('width')) {
+                $query->where('width', $request->width);
+            }
+    
+            if ($request->filled('height')) {
+                $query->where('height', $request->height);
+            }
+    
+            if ($request->filled('length')) {
+                $query->where('length', $request->length);
+            }
+    
+            if ($request->filled('weight')) {
+                $query->where('weight', $request->weight);
+            }
+            if ($request->filled('size_name')) {
+                $productVariations = $query->get();
+                foreach ($productVariations as $productVariation) {
+                    $sizesArray = explode(',', $productVariation->size_name);
+    
+                    if (in_array($request->size_name, $sizesArray)) { {
+                            return response()->json([
+                                'success' => true,
+                                'product_variation' => $productVariation,
+                                'product_images' => count(json_decode($productVariation->image_url)) > 0 ? json_decode($productVariation->image_url) : $product?->product_thumbnail,
+                                'video_url' => json_decode($productVariation->video_url),
+                            ]);
+                        }
+                    }
+                }
+            }
+            $productVariation = $query->first();
+    
+            if ($productVariation) {
+                $available_regions = json_decode($product->available_regions);
+                if(!is_array($available_regions)){
+                    $available_regions = json_decode($available_regions, true);
+                }
+    
+                if ($product->vendor->user->currency) {
+                    $vendor_country = Country::where('name', 'like', $product->vendor->user->currency->country)->first();
+                } else {
+                    $vendor_country = Country::where('name', 'like', 'Italy')->first();
+                }
+    
+                if ($vendor_country->id == (int) $country_id) {
+                    $city_percentage = CityShippingCost::where('city_id', (int) $city_id)->first()?->percentage;
+                    $total_shipping = ShippingCost::where('country_iso_2', $vendor_country->iso2)->where('weight', $productVariation->weight)->first()?->cost;
+                    if ($city_percentage && $total_shipping) {
+                        $shipping_cost = number_format(($city_percentage * $total_shipping) / 100, 2);
+                    } else {
+                        $shipping_cost = $total_shipping;
+                    }
+                    
+                } elseif (in_array('global', $available_regions)) {
+                    $shipping_cost = ShippingCost::where('country_iso_2', $vendor_country->iso2)->where('weight', $productVariation->weight)->first()?->cost;
+                    
+                } else {
+                    $countries_origins = Country::whereIn('id', $available_regions)->pluck('id')->toArray();
+                    if (in_array((int) $country_id, $countries_origins)) {
+                        $shipping_cost = ShippingCost::where('country_iso_2', $vendor_country->iso2)->where('weight', $productVariation->weight)->first()?->cost;
+                    } else {
+                        $shipping_cost = 0;
+                    }
+                   
+                }
+    
+                return response()->json([
+                    'success' => true,
+                    'product_variation' => $productVariation,
+                    'product_images' => isset($productVariation->image_url) && count(json_decode($productVariation->image_url)) > 0 ? json_decode($productVariation->image_url) : [$product?->product_thumbnail],
+                    'video_url' => json_decode($productVariation->video_url),
+                    'formatedPrice' => MyHelpers::fromEuroView($currency_id, $productVariation->price),
+                    'shipping_cost_in_euro' => $shipping_cost,
+                    'shipping_cost' => $shipping_cost > 0 ? MyHelpers::fromEuroView(session('currency_id', 0), $shipping_cost) : 'Shipping Cost not avilable for your sellected location',
+                ]);
+            } else {
+                return response()->json([
+                    'success' => false,
+                    'product_variation' => null
+                ]);
+            }
+        } catch (\Throwable $th) {
+            return response()->json([
+                'success' => false,
+                'product_variation' => $th->getMessage()
+            ],500);
+        }
+      
     }
 }

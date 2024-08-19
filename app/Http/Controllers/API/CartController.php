@@ -5,6 +5,7 @@ namespace App\Http\Controllers\API;
 use App\Http\Controllers\Controller;
 use App\Models\Cart;
 use App\Models\product\ProductModel;
+use App\Models\ProductVariation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -14,43 +15,55 @@ class CartController extends Controller
 
     public function addItem(Request $request)
     {
-        // Validation rules
+
         $request->validate([
-            'product_id' => 'required|exists:product,product_id', // Make sure the table name and column name are correct
+            'product_id' => 'required|exists:product,product_id',
             'qty' => 'numeric|required|min:1',
-            'variations' => 'nullable|array'
+            'variations' => 'nullable|array',
+            'variation_id' => 'required',
+            'weight' => 'required',
         ]);
         try {
             $exist = false;
             $p = ProductModel::where('product_id', $request->product_id)->first();
-            // Process variations
+            if ($request->filled('variation_id')) {
+                $variation = ProductVariation::where('product_id', $request->product_id)->where('id', $request->variation_id)->first();
+            }
+            if ($request->qty > $variation->product_quantity) {
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Selected Quantity is not valid quantity for product'
+                ], 500);
+            }
             $variations = $request->input('variations', []);
-            $variation_string = json_encode($variations); // Convert array to JSON string
-            // Check if the user is authenticated
-            if (Auth::guard('api')->check()) {
-                $cart = Cart::where('user_id', Auth::guard('api')->id())->where('status', 1)->first();
+            $variation_string = json_encode($variations);
 
+            if (Auth::guard('api')->check()) {
+                $user_id = Auth::guard('api')->id();
+                $cart = Cart::where('user_id', $user_id)->where('status', 1)->first();
                 if (!$cart) {
-                    // If the user doesn't have a cart, create a new one
                     $cart = new Cart();
-                    $cart->user_id = Auth::guard('api')->id();
+                    $cart->user_id = $user_id;
                     $cart->metadata = json_encode([
                         [
                             'product_id' => $request->product_id,
-                            'variations' => $variation_string, // Store variations as a JSON string
+                            'variations' => $variation_string,
+                            'variation_id' => $request->variation_id,
                             'qty' => $request->qty,
-                            'price' => $p->product_price
+                            'price' => $variation->price * $request->qty,
+                            'weight' => $request->weight ?? 1,
                         ]
                     ]);
                     $cart->save();
                 } else {
-                    // If the user has a cart, update database carts
+
                     $newMeta = json_decode($cart->metadata, true);
+                    $exist = false;
 
                     foreach ($newMeta as &$item) {
                         if ($item['product_id'] == $request->product_id && $variation_string == $item['variations']) {
                             $exist = true;
-                            $item['qty'] = $request->qty; // Update quantity
+                            $item['qty'] = $request->qty;
                             break;
                         }
                     }
@@ -59,8 +72,10 @@ class CartController extends Controller
                         $newMeta[] = [
                             'product_id' => $request->product_id,
                             'variations' => $variation_string,
-                            'price' => $p->product_price,
+                            'variation_id' => $request->variation_id,
+                            'price' => $variation->price * $request->qty,
                             'qty' => $request->qty,
+                            'weight' => $request->weight ?? 1,
                         ];
                     }
 
@@ -68,18 +83,32 @@ class CartController extends Controller
                     $cart->save();
                 }
             } else {
-                return response()->json(['message' => 'Unauthorized'], 401);
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Unauthorized User'
+                ], 401);
             }
 
             $cart = Cart::where('user_id', Auth::guard('api')->id())->where('status', 1)->first();
             if (!$exist) {
-                return response()->json(['message' => 'Successfully added item to cart.', 'cart' => $cart]);
+                return response()->json([
+                    'status' => true,
+                    'message' => 'Successfully added item to cart.',
+                    'cart' => $cart
+                ]);
             } else {
-                return response()->json(['message' => 'Item incremented in cart.', 'cart' => $cart]);
+                return response()->json([
+                    'status' => true,
+                    'message' => 'Item incremented in cart.',
+                    'cart' => $cart
+                ]);
             }
         } catch (\Exception $e) {
             Log::error($e->getMessage(), [$e]);
-            return response()->json(['message' => 'Failed to add item to cart.'], 500);
+            return response()->json([
+                'status' => false,
+                'message' => 'Failed to add item to cart.'
+            ], 500);
         }
     }
 
@@ -90,36 +119,40 @@ class CartController extends Controller
             'variations' => 'nullable',
         ]);
         try {
-            // Check if the user is authenticated
             if (Auth::guard('api')->check()) {
                 $cart = Cart::where('user_id', Auth::guard('api')->id())->where('status', 1)->first();
-
                 if ($cart) {
                     $newMeta = json_decode($cart->metadata, true);
                     $updatedMeta = [];
-
-                    // Filter out the item to be removed
                     foreach ($newMeta as $item) {
-
-                        if ($item['product_id'] != $request->product_id || json_encode($request->variations ?? []) != ($item['variations'])) {
+                        if ($item['product_id'] != $request->product_id) {
                             $updatedMeta[] = $item;
                         }
                     }
-
-                    // Update the database cart
+                    if (count($updatedMeta) == 0) {
+                        $cart->status = false;
+                    }
                     $cart->metadata = json_encode($updatedMeta);
                     $cart->save();
                 }
             } else {
-                return response()->json(['message' => 'Unauthorized'], 401);
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Unauthorized'
+                ], 401);
             }
-
             $cart = Cart::where('user_id', Auth::guard('api')->id())->where('status', 1)->first();
-
-            return response()->json(['message' => 'Successfully removed item from cart.', 'cart' => $cart]);
+            return response()->json([
+                'status' => true,
+                'message' => 'Successfully removed item from cart.',
+                'cart' => $cart
+            ]);
         } catch (\Exception $e) {
             Log::error($e->getMessage(), [$e]);
-            return response()->json(['message' => 'Failed to remove item from cart.'], 500);
+            return response()->json([
+                'status' => false,
+                'message' => 'Failed to remove item from cart.'
+            ], 500);
         }
     }
 
@@ -127,7 +160,6 @@ class CartController extends Controller
     public function my_cart(Request $request)
     {
         try {
-            // Check if the user is authenticated
             if (Auth::guard('api')->check()) {
                 $cart = Cart::where('user_id', Auth::guard('api')->id())->where('status', 1)->first();
                 if (!empty($cart)) {
@@ -137,16 +169,22 @@ class CartController extends Controller
                         $item->product_data = $p;
                         array_push($newMeta,  [$item]);
                     }
-
                     $cart->metadata = $newMeta;
                 }
-                return response()->json([$cart]);
+                return response()->json(['status' => false, 'cart' => $cart ?? []]);
             } else {
-                return response()->json(['message' => 'Unauthorized'], 401);
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Unauthorized'
+                ], 401);
             }
         } catch (\Exception $e) {
             Log::error($e->getMessage(), [$e]);
-            return response()->json(['message' => 'Failed to get cart.'], 500);
+            return response()->json([
+                'status' => false,
+                'message' => 'Failed to get cart.'
+            ], 500);
         }
     }
+
 }
