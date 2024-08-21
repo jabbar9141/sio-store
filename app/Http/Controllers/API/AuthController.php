@@ -4,6 +4,7 @@ namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
 use App\Mail\PasswordResetMail;
+use App\Models\Cart;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -78,7 +79,8 @@ class AuthController extends Controller
     }
 
     public function logout()
-    {
+    {   
+        Cart::where('user_id', Auth::guard('api')->id())->update(['status', 0]);
         Auth::guard('api')->logout();
         return response()->json([
             'status' => 'success',

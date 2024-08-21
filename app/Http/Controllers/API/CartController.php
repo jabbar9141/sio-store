@@ -61,9 +61,9 @@ class CartController extends Controller
                     $exist = false;
 
                     foreach ($newMeta as &$item) {
-                        if ($item['product_id'] == $request->product_id && $variation_string == $item['variations']) {
+                        if ($item['product_id'] == $request->product_id) {
                             $exist = true;
-                            $item['qty'] = $request->qty;
+                            $item['qty'] = (int) $item['qty'] + (int) $request->qty; 
                             break;
                         }
                     }
