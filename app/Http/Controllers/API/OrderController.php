@@ -5,11 +5,16 @@ namespace App\Http\Controllers\API;
 use App\Http\Controllers\Controller;
 use App\Models\Address;
 use App\Models\Cart;
+use App\Models\CityShippingCost;
+use App\Models\Country;
 use App\Models\Location;
 use App\Models\product\ProductModel;
+use App\Models\ProductVariation;
+use App\Models\ShippingCost;
 use App\Models\ShopOrder;
 use App\Models\ShopOrderItem;
 use App\Models\ShopOrderPayment;
+use App\MyHelpers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -70,6 +75,7 @@ class OrderController extends Controller
         }
         // Return paginated JSON response
         return response()->json([
+            "status" => true,
             'data' => $newItems,
             'current_page' => $orders->currentPage(),
             'per_page' => $orders->perPage(),
@@ -83,49 +89,102 @@ class OrderController extends Controller
 
     public function initialize(Request $request)
     {
+        // return $request;
         $request->validate([
-            'address_id' => 'required'
+            'cart_id' => 'required',
+            'country_iso_2' => 'nullable'
         ]);
-        $cart = Cart::where('user_id', Auth::guard('api')->id())->where('status', 1)->first();
+      
+        $cart = Cart::where('user_id', Auth::guard('api')->id())->where('id', $request->cart_id)->where('status', 1)->first();
+        if (isset($cart)) {
+            $order = $cart;
+            $vendor_and_weight = [];
+            $sum_shipping_cost = 0;
+            if ($request->filled('country_iso_2')) {
+                $meta =  json_decode($cart->metadata);
 
-        if ($cart) {
-            try {
-                DB::beginTransaction();
-                $old_order = ShopOrder::with(['items.item'])->where('user_id', Auth::guard('api')->id())
-                    ->where('metadata', $cart->metadata)
-                    ->where('status', 'Pending')
-                    ->orderBy('id', 'DESC')
-                    ->first();
-                if ($old_order) {
-                    $order = $old_order;
-                } else {
-                    $order = new ShopOrder;
-                    $order->order_id = UuidV4::uuid4();
-                    $order->user_id = Auth::guard('api')->id();
-                    $order->metadata = $cart->metadata;
-                    $order->save();
+                foreach ($meta as $it) {
+                    $the_product = MyHelpers::getProductById($it->product_id);
+                    $variation = ProductVariation::find($it->variation_id) ?? $the_product->variations[0];
 
-                    foreach (json_decode($cart->metadata) as $i) {
-                        $t = new ShopOrderItem;
-                        $t->order_id = $order->id;
-                        $t->item_id = $i->product_id;
-                        $t->variant = $i->variant ?? '';
-                        $t->price = $i->price;
-                        $t->qty = $i->qty ?? 1;
-                        $t->save();
+                    $price = $variation ? $variation->price : $the_product->product_price;
+
+                    $available_regions = json_decode($the_product->available_regions, true);
+
+                    if (!is_array($available_regions)) {
+                        $available_regions = json_decode($available_regions, true);
+                    }
+
+                    $total_weight_of_quantities = $it->qty * $variation->weight;
+
+                    // Sum up the weights per vendor
+                    if (array_key_exists($the_product->vendor_id, $vendor_and_weight)) {
+                        $vendor_and_weight[$the_product->vendor_id] += $total_weight_of_quantities;
+                    } else {
+                        $vendor_and_weight[$the_product->vendor_id] = $total_weight_of_quantities;
                     }
                 }
-                $shipping_cost = $this->estimate_order_ship_cost($request->address_id, $order->id);
-                DB::commit();
-                $order = ShopOrder::with(['items.item'])->where('id', $order->id)->first();
-                return response()->json(['message' => 'Order Initialized', 'order' => $order, 'shipping_cost' => $shipping_cost]);
-            } catch (\Exception $e) {
-                DB::rollBack();
-                Log::error($e->getMessage(), [$e]);
-                return response()->json(['error' => "Failed to initialize order, please try again later."], 500);
+
+                // Now, calculate the shipping cost based on vendor and weight
+                $country = Country::where('iso2', $request->country_iso_2)->first();
+
+
+                foreach ($vendor_and_weight as $vendor_id => $weight) {
+
+                    $vendor = \App\Models\VendorShop::find($vendor_id);
+
+                    // Determine the vendor's country
+                    if ($vendor->user->currency) {
+                        $vendor_country = Country::where('name', 'like', $vendor->user->currency->country)->first();
+                    } else {
+                        $vendor_country = Country::where('name', 'like', 'Italy')->first();
+                    }
+
+                    // Check if the vendor's country is the same as the request country
+                    if ($vendor_country->id == $country->id) {
+                        $city_percentage = CityShippingCost::where('city_id', (int) session('city_id'))->first()?->percentage;
+                        $total_shipping = ShippingCost::where('country_iso_2', $vendor_country->iso2)
+                            ->where('weight', $weight)
+                            ->first()?->cost;
+
+                        // Calculate the shipping cost considering city percentage if available
+                        if ($city_percentage && $total_shipping) {
+                            $shipping_cost = number_format(($city_percentage * $total_shipping) / 100, 2);
+                        } else {
+                            $shipping_cost = $total_shipping;
+                        }
+                    } elseif (in_array('global', $available_regions)) {
+                        $shipping_cost = ShippingCost::where('country_iso_2', $vendor_country->iso2)
+                            ->where('weight', $weight)
+                            ->first()?->cost;
+                    } else {
+                        $countries_origins = Country::whereIn('id', $available_regions)
+                            ->pluck('id')
+                            ->toArray();
+
+                        if (in_array($country->id, $countries_origins)) {
+                            $shipping_cost = ShippingCost::where('country_iso_2', $vendor_country->iso2)
+                                ->where('weight', $weight)
+                                ->first()?->cost;
+                        } else {
+                            $shipping_cost = 0;
+                        }
+                    }
+                    $sum_shipping_cost += $shipping_cost;
+                }
             }
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Order Initialized',
+                'order' => $order,
+                'shipping_cost' => $sum_shipping_cost,
+            ]);
         } else {
-            return response()->json(['error' => "Your cart is empty"], 400);
+            return response()->json([
+                'status' => false,
+                'error' => "Cart Not Found",
+            ]);
         }
     }
     /**
@@ -414,8 +473,8 @@ class OrderController extends Controller
                     $transaction->status = 'Pending';
                     $transaction->save();
                     $order = ShopOrder::where('id', $transaction->order_id)->first();
-                        $order->status = 'Pending';
-                        $order->save();
+                    $order->status = 'Pending';
+                    $order->save();
                 }
 
                 break;
