@@ -22,6 +22,7 @@ use Illuminate\Support\Facades\Log;
 use Ramsey\Uuid\Rfc4122\UuidV4;
 use Stripe\Exception\SignatureVerificationException;
 use Stripe\Webhook;
+use Srmklive\PayPal\Services\PayPal as PayPalClient;
 
 class OrderController extends Controller
 {
@@ -94,7 +95,7 @@ class OrderController extends Controller
             'cart_id' => 'required',
             'country_iso_2' => 'nullable'
         ]);
-      
+
         $cart = Cart::where('user_id', Auth::guard('api')->id())->where('id', $request->cart_id)->where('status', 1)->first();
         if (isset($cart)) {
             $order = $cart;
@@ -249,124 +250,83 @@ class OrderController extends Controller
         }
     }
 
-    public function submit(Request $request, $order_id)
-    {
-        // dd($request->all());
+    public function submit(Request $request)
+    {  
         $request->validate([
-            'shipping_provider' => 'required',
-            'payment_provider' => 'required'
+            'cart_id' =>  'required',
+            'payment_provider' => 'required',
+            'shipping_address_id' => 'required',
+            'shipping_cost' => 'required',
         ]);
-
+       
         try {
             DB::beginTransaction();
-
-            $order = ShopOrder::where('id', $order_id)->first();
-
-            $order->shipping_method = $request->shipping_provider;
-            $order->payment_method = $request->payment_provider;
-            $order->save();
-
-            $order->shipping_cost = (array) json_decode($order->shipping_cost);
-
-            // dd($order->items);
-
-            $cost = 0;
-
-            foreach ($order->items as $it) {
-                $cost = $cost + ($it->item->product_price * 100);
-            }
-
-            //one last item to represent the shipping costs
-            $cost = $cost + ($order->shipping_cost[strtolower($request->shipping_provider)] * 100);
-
-
-
-            if ($request->payment_provider == "STRIPE") {
-
-                \Stripe\Stripe::setApiKey(env("STRIPE_SECRET"));
-
-                $paymentIntent = \Stripe\PaymentIntent::create([
-                    'amount' => $cost,
-                    'currency' => 'eur',
-                    'automatic_payment_methods' => ['enabled' => true],
-                    'metadata' => [
-                        'order_id' => $order_id,
-                    ]
-                ]);
-
-                //create our own order payment intent
-                $lp = new ShopOrderPayment;
-
-                $lp->ref = $paymentIntent->id;
-                $lp->payment_method = 'STRIPE';
-                $lp->order_id = $order->id;
-                $lp->amount = $paymentIntent->amount;
-                $lp->metadata = json_encode($paymentIntent);
-                $lp->status = 'Pending';
-                $lp->save();
-
-                //empty cart
-                $cart = Cart::where('user_id', Auth::guard('api')->id())->where('status', 1)->first();
-                $cart->status = 0;
-                $cart->save();
-
-                DB::commit();
-                //return the cient secret of the payment intent
-                return response()->json(['status' => true, 'message' => 'Payment intent created successfully', 'data' => ['client_secret' => $paymentIntent->client_secret, 'method' => 'STRIPE']]);
-            } elseif ($request->payment_provider == "SUMUP") {
-
-                try {
-                    $sumup = new \SumUp\SumUp([
-                        'app_id'     => env('SUMUP_KEY'),
-                        'app_secret' => env('SUMUP_SECRET'),
-                        'grant_type' => 'client_credentials',
-                        'scopes'      => ['payments', 'transactions.history', 'user.app-settings', 'user.profile_readonly']
-                    ]);
-                    $accessToken = $sumup->getAccessToken();
-                    $value = $accessToken->getValue();
-                    $checkoutService = $sumup->getCheckoutService();
-                    $checkoutResponse = $checkoutService->create(
-                        ($cost / 100),
-                        'EUR',
-                        $order_id . "_" . rand(100000, 999999),
-                        env('SUMUP_EMAIL'),
-                        'Payment Intent for order: ' . $order_id,
-                        Auth::user()->email,
-                        route('payment_success_sumup')
-                    );
-                    $paymentIntent = $checkoutResponse->getBody();
-                    //  pass the $chekoutId to the front-end to be processed
-                } catch (\SumUp\Exceptions\SumUpAuthenticationException $e) {
-                    Log::error('Authentication error: ' . $e->getMessage(), [$e]);
-                    return response()->json(['status' => false, 'message' => "A payment error occured"], 500);
-                } catch (\SumUp\Exceptions\SumUpResponseException $e) {
-                    Log::error('Response error: ' . $e->getMessage(), [$e]);
-                    return response()->json(['status' => false, 'message' => "A payment error occured"], 500);
-                } catch (\SumUp\Exceptions\SumUpSDKException $e) {
-                    Log::error('SumUp SDK error: ' . $e->getMessage(), [$e]);
-                    return response()->json(['status' => false, 'message' => "A payment error occured"], 500);
+            $cart = Cart::find($request->cart_id);
+           
+            if (isset($cart)) {
+                $order = new ShopOrder;
+                $order->order_id = UuidV4::uuid4();
+                $order->user_id = Auth::guard('api')->id();
+                $order->shipping_cost = $request->shipping_cost;
+                $order->billing_address_id = $request->shipping_address_id;
+                $order->shipping_address_id = $request->shipping_address_id;
+                $order->shipping_method =  null;
+                $order->payment_method = $request->payment_provider;
+                $order->status = 'Completed';
+                $order->metadata = $cart->metadata;
+                $order->save();
+                
+                $cartMeta = json_decode($cart->metadata);
+                foreach ($cartMeta as $i) {
+                    $t = new ShopOrderItem;
+                    $t->order_id = $order->id;
+                    $t->item_id = $i->product_id;
+                    $t->variant = $i->variations ?? '';
+                    $t->price = $i->price / $i->qty;
+                    $t->qty = $i->qty ?? 1;
+                    $t->total_price = $i->price;
+                    $t->product_variation_id = $i->variation_id ?? null;
+                    $t->save();
                 }
 
-                //create our own order payment intent
-                $lp = new ShopOrderPayment;
 
-                $lp->ref = $paymentIntent->id;
-                $lp->payment_method = 'SUMUP';
+                $lp = new ShopOrderPayment;
+                $lp->ref = UuidV4::uuid4();
+                $lp->payment_method = $request->payment_provider;
                 $lp->order_id = $order->id;
-                $lp->amount = $cost;
-                $lp->metadata = json_encode($paymentIntent);
-                $lp->status = 'Pending';
+                $lp->amount = (float)($order->items->sum('total_amount') ?? 0) + (float)($order->shipping_cost ?? 0);
+                $lp->metadata = $order->metadata;
+                $lp->status = 'Done';
                 $lp->save();
 
-                DB::commit();
-                //return the cient secret of the payment intent
-                return view('user.complete_order_mobile', ['client_secret' => $paymentIntent->id, 'orderId' => $order->id]);
-                // return response()->json(['status' => true, 'message' => 'Payment intent created successfully', 'data' => ['client_secret' => $paymentIntent->id, 'method' => "SUMUP"]]);
+                foreach ($order->items as $item) {
+                    $variation = ProductVariation::where('id', $item->product_variation_id)->first();
+                    if ($variation) {
+                        $variation->product_quantity = $variation->product_quantity - $item->qty;
+                        $variation->save();
+                    } else {
+                        $item->item->product_quantity = $item->item->product_quantity - $item->qty;
+                        $item->item->save();
+                    }
+                }
+
+                $cart->status = 0;
+                $cart->save();
             }
+            DB::commit();
+            return response()->json(
+                [   
+                    'status' => true,
+                    'message' => 'Payment successful, Order completed'
+                ], 200);
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error($e->getMessage(), [$e]);
-            return response()->json(['message' => "Failed to initiate payment, please try again later"], 500);
+            return response()->json(
+                [    
+                    'stauts' => false,
+                    'message' => "Something went wrong !",
+                ], 500);
         }
     }
 
@@ -708,6 +668,45 @@ class OrderController extends Controller
         } catch (\Error $e) {
             Log::error($e->getMessage(), [$e]);
             //TODO:implement what is shown when it fails to retrive stripe data
+        }
+    }
+
+    public function cancel($cart_id)
+    {   
+        return 'sdafsa';
+        $card = Cart::find($cart_id);
+        if ($card) {
+            $cart_id->delete();
+        }
+        return response()->json(
+            [
+                'status' => 'FAILED',
+                'message' => 'Payment Un-successfull'
+            ]
+        );
+    }
+
+    public function success(Request $request)
+    {  
+        return 'sdafsa';
+        $provider = new PayPalClient;
+        $provider->setApiCredentials(config('paypal'));
+        $provider->getAccessToken();
+        $response = $provider->capturePaymentOrder($request['token']);
+        if (isset($response['status']) && $response['status'] == 'COMPLETED') {
+            return response()->json(
+                [
+                    'status' => 'COMPLETED',
+                    'message' => 'Payment Successfully'
+                ]
+            );
+        } else {
+            return response()->json(
+                [
+                    'status' => 'FAILED',
+                    'error' => $response['message'] ?? 'Something went wrong'
+                ]
+            );
         }
     }
 }

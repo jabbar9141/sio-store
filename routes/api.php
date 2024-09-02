@@ -130,7 +130,9 @@ Route::controller(OrderController::class)->middleware(['auth:api'])->prefix('ord
     Route::get('index', 'index');
     Route::get('show/{order_id}', 'show');
     Route::post('init', 'initialize');
-    Route::post('submit/{id}', 'submit');
+    Route::post('submit', 'submit');
+    Route::get('cancel/payment/{cart_id}', 'cancel');
+    Route::get('success/payment', 'success');
 });
 
 Route::controller(WishlistController::class)->middleware(['auth:api'])->prefix('wishlist')->group(function () {
