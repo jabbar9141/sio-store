@@ -13,16 +13,8 @@ use App\Http\Controllers\API\ShippingFee;
 use App\Http\Controllers\API\VendorController;
 use App\Http\Controllers\API\WishlistController;
 use App\Http\Controllers\CurrencyController;
-use App\Http\Controllers\ProductController as ControllersProductController;
-use App\Mail\AddProductEmail;
-use App\Mail\ContactUsMail;
-use App\Models\GetInTouch;
-use App\Models\product\ProductModel;
 use App\MyHelpers;
-use GuzzleHttp\Client;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Route;
 
 /*
