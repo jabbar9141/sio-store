@@ -90,7 +90,7 @@ class OrderController extends Controller
 
     public function initialize(Request $request)
     {
-        // return $request;
+        // return Auth::guard('api')->id();
         $request->validate([
             'cart_id' => 'required',
             'country_iso_2' => 'nullable'
@@ -99,6 +99,7 @@ class OrderController extends Controller
         $cart = Cart::where('user_id', Auth::guard('api')->id())->where('id', $request->cart_id)->where('status', 1)->first();
         if (isset($cart)) {
             $order = $cart;
+          
             $vendor_and_weight = [];
             $sum_shipping_cost = 0;
             if ($request->filled('country_iso_2')) {
@@ -173,8 +174,16 @@ class OrderController extends Controller
                     }
                     $sum_shipping_cost += $shipping_cost;
                 }
+                
+                $newMeta = [];
+                foreach (json_decode($order->metadata) as $item) {
+                    $p = ProductModel::find($item->product_id);
+                    $item->product_data = $p;
+                    array_push($newMeta,  [$item]);
+                }
+                $order->metadata = $newMeta;
             }
-
+           
             return response()->json([
                 'status' => true,
                 'message' => 'Order Initialized',
