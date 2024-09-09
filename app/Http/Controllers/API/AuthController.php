@@ -4,8 +4,11 @@ namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
 use App\Mail\PasswordResetMail;
+use App\Models\Address;
 use App\Models\Cart;
 use App\Models\User;
+use App\MyHelpers;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -184,5 +187,37 @@ class AuthController extends Controller
             'status' => true,
             'message' => 'Password reset successfully'
         ]);
+    }
+
+    public function removeUser($id)
+    {   
+        try {
+            return DB::transaction(function () use ($id) {
+                $user = User::findOrFail($id);
+                if ($user->photo) {
+                    MyHelpers::deleteImageFromStorage($user->photo, 'uploads/images/profile/');
+                }
+                $user->cart()->delete();
+                Address::where('user_id', $user->id)->delete();
+                if ($user->delete())
+                    return response()->json(
+                        [
+                            'msg' => "User deleted successfully",
+                            'success' => true,
+                        ]
+                    );
+                else
+                    return response()->json([
+                        'msg' => "Something went wrong",
+                        'success' => false,
+                    ]);
+            });
+
+        } catch (ModelNotFoundException $exception) {
+            return response()->json([
+                'msg' => "Something went wrong",
+                'success' => false,
+            ]);
+        }
     }
 }

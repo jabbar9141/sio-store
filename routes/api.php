@@ -62,6 +62,7 @@ Route::controller(AuthController::class)->prefix('auth')->group(function () {
     Route::post('password-reset-request',  'requestPasswordReset');
     Route::post('password-reset-otp', 'passwordResetOTP');
     Route::post('password-reset-change', 'passwordResetChange');
+    Route::get('removeUser/{id}', 'removeUser');
 });
 
 Route::controller(ProductController::class)->prefix('products')->group(function () {

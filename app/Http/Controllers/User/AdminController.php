@@ -72,18 +72,6 @@ class AdminController extends Controller
                         'id' => $vendor->vendor_id,
                     ]);
                     $this->vendorRemove($my_request);
-                    // $products = $vendor->products;
-                    // if (count($products) > 0) {
-                    //     foreach ($products as $product) {
-                    //         $product->offers()->delete();
-                    //         $product->variations()->delete();
-                    //         $product->images()->delete();
-                    //         $product->reviews()->delete();
-
-                    //         $product->delete();
-                    //     }
-                    // }
-                    // $vendor->delete();
                 }
                 if ($user->photo) {
                     MyHelpers::deleteImageFromStorage($user->photo, 'uploads/images/profile/');
