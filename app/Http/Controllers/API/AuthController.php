@@ -3,10 +3,14 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
+use App\Mail\ContactWithVendorMail;
 use App\Mail\PasswordResetMail;
 use App\Models\Address;
 use App\Models\Cart;
+use App\Models\GetInTouch;
+use App\Models\product\ProductModel;
 use App\Models\User;
+use App\Models\VendorShop;
 use App\MyHelpers;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
@@ -20,7 +24,13 @@ class AuthController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('auth:api', ['except' => ['login', 'register']]);
+        $this->middleware('auth:api', ['except' => [
+            'login',
+            'register',
+            'requestPasswordReset',
+            'passwordResetOTP',
+            'passwordResetChange'
+        ]]);
     }
 
     public function login(Request $request)
@@ -81,8 +91,26 @@ class AuthController extends Controller
         ]);
     }
 
+    public function updateProfileImage(Request $request)
+    {
+        $request->validate([
+            'avatar' => 'required',
+        ]);
+        $user = Auth::guard('api')->user();
+        if ($user->photo) {
+            MyHelpers::deleteImageFromStorage($user->photo, 'uploads/images/profile/');
+        }
+        $photo = MyHelpers::uploadImage($request->file('avatar'), 'uploads/images/profile');
+        $user->photo = $photo;
+        $user->save();
+        return response()->json([
+            'status' => 'success',
+            'message' => 'User Profile updated successfully',
+        ]);
+    }
+
     public function logout()
-    {   
+    {
         Cart::where('user_id', Auth::guard('api')->id())->update(['status', 0]);
         Auth::guard('api')->logout();
         return response()->json([
@@ -116,9 +144,7 @@ class AuthController extends Controller
         $request->validate([
             'email' => 'required|email',
         ]);
-
         $user = User::where('email', $request->email)->first();
-
         if (!$user) {
             return response()->json([
                 'status' => false,
@@ -150,7 +176,6 @@ class AuthController extends Controller
             'email' => 'required|email',
             'otp' => 'required|numeric',
         ]);
-
         $user = User::where('email', $request->email)->first();
 
         if (!$user) {
@@ -167,6 +192,7 @@ class AuthController extends Controller
 
     public function passwordResetChange(Request $request)
     {
+
         $request->validate([
             'email' => 'required|email',
             'password' => 'required|confirmed',
@@ -190,7 +216,7 @@ class AuthController extends Controller
     }
 
     public function removeUser($id)
-    {   
+    {
         try {
             return DB::transaction(function () use ($id) {
                 $user = User::findOrFail($id);
@@ -212,7 +238,6 @@ class AuthController extends Controller
                         'success' => false,
                     ]);
             });
-
         } catch (ModelNotFoundException $exception) {
             return response()->json([
                 'msg' => "Something went wrong",

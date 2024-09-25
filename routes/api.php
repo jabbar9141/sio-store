@@ -13,6 +13,7 @@ use App\Http\Controllers\API\ShippingFee;
 use App\Http\Controllers\API\VendorController;
 use App\Http\Controllers\API\WishlistController;
 use App\Http\Controllers\CurrencyController;
+use App\Http\Controllers\HomeController;
 use App\MyHelpers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -63,6 +64,7 @@ Route::controller(AuthController::class)->prefix('auth')->group(function () {
     Route::post('password-reset-otp', 'passwordResetOTP');
     Route::post('password-reset-change', 'passwordResetChange');
     Route::get('removeUser/{id}', 'removeUser');
+    Route::post('updateProfileImage', 'updateProfileImage');
 });
 
 Route::controller(ProductController::class)->prefix('products')->group(function () {
@@ -150,4 +152,4 @@ Route::controller(ProductReviewsController::class)->prefix('reviews')->group(fun
 Route::get('currencies',[CurrencyController::class, 'getAllCurrencies']);
 Route::get('countries',[CurrencyController::class, 'getAllCountries']);
 Route::get('city/{country_id}',[CurrencyController::class, 'getAllCitiesOfCountry']);
-
+Route::post('contactWithVendor',[HomeController::class, 'contactWithVendor']);
