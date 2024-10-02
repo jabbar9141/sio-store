@@ -103,7 +103,9 @@ class BrandController extends Controller
 
             // Start building the query to fetch products
             $query = ProductModel::with(['images', 'sub_category', 'category', 'brand', 'vendor', 'reviews.user'])
-                ->where('product_status', 1)->where('admin_approved', 1)->where('product_quantity', '>', 0)
+                ->where('product_status', 1)->where('admin_approved', 1)->withWhereHas('variations',function($query){
+                    $query->where('product_quantity','>',0);
+                })
                 ->where('brand_id', $id)
                 ->withCount('reviews')
                 ->addSelect([
